@@ -1,0 +1,492 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>汕头 CityWalk 路线清单</title>
+<link href="https://fonts.googleapis.com/css2?family=Ma+Shan+Zheng&family=Noto+Serif+SC:wght@300;400;600;700&family=Noto+Sans+SC:wght@300;400;500;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --ink: #1a1410;
+  --warm: #3d2b1f;
+  --terracotta: #c0522a;
+  --amber: #d4942a;
+  --sea: #2a5c6e;
+  --purple: #7a5c8a;
+  --green: #2a7a5c;
+  --cream: #faf7f2;
+  --sand: #f5efe6;
+  --border: #e0d5c5;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  font-family: 'Noto Sans SC', sans-serif;
+  background: var(--cream);
+  color: var(--ink);
+  line-height: 1.7;
+  padding: 20px;
+  max-width: 800px;
+  margin: 0 auto;
+}
+
+h1 {
+  font-family: 'Ma Shan Zheng', 'Noto Serif SC', serif;
+  font-size: 32px;
+  text-align: center;
+  margin-bottom: 8px;
+  color: var(--warm);
+}
+
+.subtitle {
+  text-align: center;
+  color: #8a7a6a;
+  font-size: 13px;
+  margin-bottom: 30px;
+  letter-spacing: 2px;
+}
+
+.print-tip {
+  text-align: center;
+  font-size: 11px;
+  color: #aaa;
+  margin-bottom: 24px;
+  padding: 8px;
+  background: #f5f0e8;
+  border-radius: 6px;
+}
+
+.route {
+  background: #fff;
+  border-radius: 12px;
+  margin-bottom: 24px;
+  border: 1px solid var(--border);
+  overflow: hidden;
+  page-break-inside: avoid;
+}
+
+.route-header {
+  padding: 18px 20px;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.route-r1 .route-header { background: linear-gradient(135deg, #fdf5f0, #faf0eb); border-bottom: 1px solid var(--border); }
+.route-r2 .route-header { background: linear-gradient(135deg, #fdf8ef, #faf5ed); border-bottom: 1px solid var(--border); }
+.route-r3 .route-header { background: linear-gradient(135deg, #f0f5f7, #e8f0f2); border-bottom: 1px solid var(--border); }
+.route-r4 .route-header { background: linear-gradient(135deg, #f5f0f7, #f0ebf5); border-bottom: 1px solid var(--border); }
+.route-r5 .route-header { background: linear-gradient(135deg, #f0f5f2, #ebf0ed); border-bottom: 1px solid var(--border); }
+
+.route-badge {
+  width: 42px;
+  height: 42px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #fff;
+  font-family: 'Ma Shan Zheng', serif;
+  font-size: 22px;
+  flex-shrink: 0;
+}
+
+.route-r1 .route-badge { background: var(--terracotta); }
+.route-r2 .route-badge { background: var(--amber); }
+.route-r3 .route-badge { background: var(--sea); }
+.route-r4 .route-badge { background: var(--purple); }
+.route-r5 .route-badge { background: var(--green); }
+
+.route-meta h2 {
+  font-family: 'Noto Serif SC', serif;
+  font-size: 17px;
+  font-weight: 600;
+  color: var(--warm);
+  margin-bottom: 3px;
+}
+
+.route-meta .info {
+  font-size: 12px;
+  color: #8a7a6a;
+}
+
+.route-meta .tags {
+  margin-top: 4px;
+}
+
+.tag {
+  display: inline-block;
+  font-size: 10px;
+  padding: 2px 8px;
+  border-radius: 10px;
+  background: rgba(0,0,0,0.06);
+  color: #6a5a4a;
+  margin-right: 4px;
+}
+
+.station-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+
+.station-table th {
+  text-align: left;
+  padding: 10px 16px;
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 1px;
+  color: #8a7a6a;
+  background: var(--sand);
+  border-bottom: 1px solid var(--border);
+}
+
+.station-table td {
+  padding: 12px 16px;
+  border-bottom: 1px solid #f0ebe3;
+  vertical-align: top;
+}
+
+.station-table tr:last-child td { border-bottom: none; }
+
+.station-table .num {
+  width: 28px;
+  color: #aaa;
+  font-size: 12px;
+}
+
+.station-table .name {
+  font-weight: 600;
+  color: var(--warm);
+}
+
+.station-table .time {
+  white-space: nowrap;
+  color: var(--terracotta);
+  font-size: 12px;
+  font-weight: 500;
+}
+
+.station-table .note {
+  color: #8a7a6a;
+  font-size: 12px;
+}
+
+.route-footer {
+  padding: 14px 20px;
+  background: var(--sand);
+  font-size: 12px;
+  color: #6a5a4a;
+  border-top: 1px solid var(--border);
+}
+
+.route-footer strong { color: var(--warm); }
+
+.day-split {
+  background: #f8f4ef;
+  padding: 6px 12px;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--warm);
+  letter-spacing: 1px;
+  border-left: 3px solid var(--terracotta);
+  margin: 12px 0 8px 16px;
+}
+
+.transport-box {
+  background: #f0f5f7;
+  border-radius: 10px;
+  padding: 16px;
+  margin: 20px 20px;
+  border: 1px solid #d5e5ea;
+}
+
+.transport-box h4 {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--sea);
+  margin-bottom: 8px;
+  letter-spacing: 1px;
+}
+
+.transport-box p {
+  font-size: 12px;
+  color: #4a5a6a;
+  line-height: 1.8;
+}
+
+.food-box {
+  background: #fdf8ef;
+  border-radius: 10px;
+  padding: 16px;
+  margin: 0 20px 16px;
+  border: 1px solid #f0e0c0;
+}
+
+.food-box h4 {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--amber);
+  margin-bottom: 8px;
+  letter-spacing: 1px;
+}
+
+.food-box p {
+  font-size: 12px;
+  color: #6a5a4a;
+  line-height: 1.8;
+}
+
+.print-only { display: none; }
+
+@media print {
+  body { padding: 0; max-width: 100%; }
+  .print-tip { display: none; }
+  .route { break-inside: avoid; }
+  .print-only { display: block; text-align: center; font-size: 10px; color: #ccc; padding: 10px; }
+}
+</style>
+</head>
+<body>
+
+<h1>汕头 CityWalk</h1>
+<p class="subtitle">五 条 路 线 · 时 长 清 单</p>
+<p class="print-tip">🖨️ 推荐横版打印，或手机截图保存</p>
+
+<!-- ROUTE 1 -->
+<div class="route route-r1">
+  <div class="route-header">
+    <div class="route-badge">一</div>
+    <div class="route-meta">
+      <h2>老城寻根 — 开埠旧梦与骑楼烟火</h2>
+      <p class="info">金平区老城区 · 步行 + 轮渡</p>
+      <div class="tags">
+        <span class="tag">历史</span><span class="tag">骑楼</span><span class="tag">日落</span>
+      </div>
+    </div>
+  </div>
+  <table class="station-table">
+    <thead>
+      <tr>
+        <th>#</th>
+        <th>站点</th>
+        <th>时长</th>
+        <th>备注</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr><td class="num">1</td><td class="name">中山公园</td><td class="time">60min</td><td class="note">"园中三绝"，起点</td></tr>
+      <tr><td class="num">2</td><td class="name">开埠文化陈列馆</td><td class="time">40min</td><td class="note">1860年开埠史</td></tr>
+      <tr><td class="num">3</td><td class="name">汕头邮政总局</td><td class="time">20min</td><td class="note">百年邮政大楼</td></tr>
+      <tr><td class="num">4</td><td class="name">老妈宫戏台</td><td class="time">20min</td><td class="note">潮剧表演</td></tr>
+      <tr><td class="num">5</td><td class="name">汕头旅社</td><td class="time">15min</td><td class="note">打卡"汕头"二字招牌</td></tr>
+      <tr><td class="num">6</td><td class="name">小公园骑楼群</td><td class="time">50min</td><td class="note">国内最大骑楼群</td></tr>
+      <tr><td class="num">7</td><td class="name">镇邦美食街</td><td class="time">90min</td><td class="note">午饭 · 29家潮汕美食</td></tr>
+      <tr><td class="num">8</td><td class="name">西堤公园</td><td class="time">40min</td><td class="note">礐石大桥最佳观景点</td></tr>
+      <tr><td class="num">9</td><td class="name">广场轮渡</td><td class="time">30min</td><td class="note">1元体验海上日落</td></tr>
+      <tr><td class="num">10</td><td class="name">潮人码头</td><td class="time">30min</td><td class="note">夜景灯光秀</td></tr>
+      <tr><td class="num">11</td><td class="name">龙眼南路美食街</td><td class="time">120min</td><td class="note">夜宵天堂 · 晚餐+宵夜</td></tr>
+    </tbody>
+  </table>
+  <div class="route-footer">
+    ⏱️ <strong>约 8.5 小时</strong> · 步行约 12km · 美食预算约 ¥150-200
+  </div>
+</div>
+
+<!-- ROUTE 2 -->
+<div class="route route-r2">
+  <div class="route-header">
+    <div class="route-badge">二</div>
+    <div class="route-meta">
+      <h2>吃货征途 — 从早茶到夜宵的味蕾马拉松</h2>
+      <p class="info">金平区 + 龙湖区 · 全天</p>
+      <div class="tags">
+        <span class="tag">美食</span><span class="tag">老字号</span><span class="tag">地道</span>
+      </div>
+    </div>
+  </div>
+  <table class="station-table">
+    <thead>
+      <tr>
+        <th>#</th>
+        <th>站点</th>
+        <th>时长</th>
+        <th>备注</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr><td class="num">1</td><td class="name">小吴肠粉</td><td class="time">25min</td><td class="note">早餐 · 鲜虾蛋肉肠 ¥7</td></tr>
+      <tr><td class="num">2</td><td class="name">春梅里卤鹅馆</td><td class="time">40min</td><td class="note">狮头鹅卤制</td></tr>
+      <tr><td class="num">3</td><td class="name">福合埕牛肉丸</td><td class="time">30min</td><td class="note">手捶牛肉丸</td></tr>
+      <tr><td class="num">4</td><td class="name">飘香小食店</td><td class="time">30min</td><td class="note">蚝烙、无米粿</td></tr>
+      <tr><td class="num">5</td><td class="name">老妈宫粽球</td><td class="time">20min</td><td class="note">双烹粽球</td></tr>
+      <tr><td class="num">6</td><td class="name">镇邦美食街</td><td class="time">60min</td><td class="note">午饭 · 美食集合</td></tr>
+      <tr><td class="num">7</td><td class="name">杏花吴记牛肉火锅</td><td class="time">90min</td><td class="note">牛肉火锅顶流 · 晚餐</td></tr>
+      <tr><td class="num">8</td><td class="name">广场轮渡</td><td class="time">40min</td><td class="note">消食散步，看日落</td></tr>
+      <tr><td class="num">9</td><td class="name">潮人码头</td><td class="time">30min</td><td class="note">海边溜达</td></tr>
+      <tr><td class="num">10</td><td class="name">蒂蒂香达濠鱼丸</td><td class="time">25min</td><td class="note">广东省非遗</td></tr>
+      <tr><td class="num">11</td><td class="name">龙眼南路夜市</td><td class="time">120min</td><td class="note">果汁冰 + 砂锅粥 + 生腌 · 宵夜</td></tr>
+    </tbody>
+  </table>
+  <div class="route-footer">
+    ⏱️ <strong>约 8.5 小时</strong> · 美食预算约 ¥200-300
+  </div>
+</div>
+
+<!-- ROUTE 3 -->
+<div class="route route-r3">
+  <div class="route-header">
+    <div class="route-badge">三</div>
+    <div class="route-meta">
+      <h2>海风诗行 — 内海湾两岸的浪漫漫步</h2>
+      <p class="info">金平区 ↔ 濠江区（南岸）· 约 6 小时</p>
+      <div class="tags">
+        <span class="tag">海景</span><span class="tag">日落</span><span class="tag">文化</span>
+      </div>
+    </div>
+  </div>
+  <table class="station-table">
+    <thead>
+      <tr>
+        <th>#</th>
+        <th>站点</th>
+        <th>时长</th>
+        <th>备注</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr><td class="num">1</td><td class="name">石炮台公园</td><td class="time">40min</td><td class="note">清代炮台遗址</td></tr>
+      <tr><td class="num">2</td><td class="name">海滨长廊</td><td class="time">30min</td><td class="note">沿内海湾步行</td></tr>
+      <tr><td class="num">3</td><td class="name">广场轮渡</td><td class="time">20min</td><td class="note">乘轮渡过海</td></tr>
+      <tr><td class="num">4</td><td class="name">潮汕历史文化博览中心</td><td class="time">60min</td><td class="note">何镜堂院士设计</td></tr>
+      <tr><td class="num">5</td><td class="name">礐石风景区</td><td class="time">120min</td><td class="note">AAAA级，山海相依</td></tr>
+      <tr><td class="num">6</td><td class="name">南滨路观日落</td><td class="time">45min</td><td class="note">汕头最美日落点</td></tr>
+      <tr><td class="num">7</td><td class="name">潮人码头（返回）</td><td class="time">20min</td><td class="note">轮渡返回北岸</td></tr>
+      <tr><td class="num">8</td><td class="name">富苑饮食</td><td class="time">90min</td><td class="note">夜宵天花板 · 晚饭</td></tr>
+    </tbody>
+  </table>
+  <div class="route-footer">
+    ⏱️ <strong>约 7 小时</strong> · 轮渡 ¥1×2 · 美食预算约 ¥150-200
+  </div>
+</div>
+
+<!-- ROUTE 4 -->
+<div class="route route-r4">
+  <div class="route-header">
+    <div class="route-badge">四</div>
+    <div class="route-meta">
+      <h2>新城艺境 — 艺术村落与东海岸的慢时光</h2>
+      <p class="info">龙湖区东海岸 · 约 5 小时</p>
+      <div class="tags">
+        <span class="tag">艺术</span><span class="tag">文艺</span><span class="tag">亲子</span>
+      </div>
+    </div>
+  </div>
+  <table class="station-table">
+    <thead>
+      <tr>
+        <th>#</th>
+        <th>站点</th>
+        <th>时长</th>
+        <th>备注</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr><td class="num">1</td><td class="name">汕头市博物馆</td><td class="time">60min</td><td class="note">国家二级博物馆 · 起点</td></tr>
+      <tr><td class="num">2</td><td class="name">海滨路东延段</td><td class="time">40min</td><td class="note">27.5公里滨海走廊</td></tr>
+      <tr><td class="num">3</td><td class="name">十一合艺术村</td><td class="time">60min</td><td class="note">746座下山虎民居</td></tr>
+      <tr><td class="num">4</td><td class="name">十一合美食街</td><td class="time">90min</td><td class="note">午饭 · 广东省粤菜美食街</td></tr>
+      <tr><td class="num">5</td><td class="name">东海岸大道</td><td class="time">30min</td><td class="note">16.4公里滨海景观</td></tr>
+      <tr><td class="num">6</td><td class="name">东海岸公园</td><td class="time">45min</td><td class="note">沙滩漫步</td></tr>
+      <tr><td class="num">7</td><td class="name">东海岸夜景</td><td class="time">60min</td><td class="note">新城灯光 · 晚餐</td></tr>
+    </tbody>
+  </table>
+  <div class="route-footer">
+    ⏱️ <strong>约 6.5 小时</strong> · 需打车/自驾 · 美食预算约 ¥120-180
+  </div>
+</div>
+
+<!-- ROUTE 5 -->
+<div class="route route-r5">
+  <div class="route-header">
+    <div class="route-badge">五</div>
+    <div class="route-meta">
+      <h2>南澳逐浪 — 海岛环线的山海诗篇</h2>
+      <p class="info">南澳县 · 2天1夜 · 自驾/包车</p>
+      <div class="tags">
+        <span class="tag">海岛</span><span class="tag">自驾</span><span class="tag">灯塔</span><span class="tag">日出</span>
+      </div>
+    </div>
+  </div>
+  
+  <div class="day-split">📅 Day 1 · 北环（大桥 → 山林 → 灯塔）</div>
+  <table class="station-table">
+    <thead>
+      <tr>
+        <th>#</th>
+        <th>站点</th>
+        <th>时长</th>
+        <th>备注</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr><td class="num">1</td><td class="name">南澳大桥</td><td class="time">20min</td><td class="note">11公里跨海大桥</td></tr>
+      <tr><td class="num">2</td><td class="name">黄花山森林公园</td><td class="time">90min</td><td class="note">天然氧吧，岛上制高点</td></tr>
+      <tr><td class="num">3</td><td class="name">长尾山灯塔</td><td class="time">30min</td><td class="note">红色灯塔打卡点</td></tr>
+      <tr><td class="num">4</td><td class="name">金银岛</td><td class="time">30min</td><td class="note">海盗藏宝传说</td></tr>
+      <tr><td class="num">5</td><td class="name">总兵府</td><td class="time">45min</td><td class="note">明清海防衙署</td></tr>
+      <tr><td class="num">6</td><td class="name">风车山</td><td class="time">40min</td><td class="note">壮观风车阵列</td></tr>
+      <tr><td class="num">7</td><td class="name">钱澳湾灯塔</td><td class="time">25min</td><td class="note">清新绿色灯塔</td></tr>
+      <tr><td class="num">8</td><td class="name">宋井</td><td class="time">30min</td><td class="note">海滩千年淡水井</td></tr>
+      <tr><td class="num">9</td><td class="name">云澳渔港</td><td class="time">60min</td><td class="note">渔村风情 · 住宿/晚饭</td></tr>
+    </tbody>
+  </table>
+  
+  <div class="day-split">📅 Day 2 · 南环（地质 → 海湾 → 日出）</div>
+  <table class="station-table">
+    <thead>
+      <tr>
+        <th>#</th>
+        <th>站点</th>
+        <th>时长</th>
+        <th>备注</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr><td class="num">10</td><td class="name">田仔地质公园</td><td class="time">40min</td><td class="note">海蚀地貌</td></tr>
+      <tr><td class="num">11</td><td class="name">三囱崖灯塔</td><td class="time">30min</td><td class="note">红白双子灯塔</td></tr>
+      <tr><td class="num">12</td><td class="name">青澳湾</td><td class="time">90min</td><td class="note">"东方夏威夷" · 午餐</td></tr>
+      <tr><td class="num">13</td><td class="name">北回归线标志塔</td><td class="time">30min</td><td class="note">"自然之门" · 日出最佳点</td></tr>
+      <tr><td class="num">14</td><td class="name">后花园生态区</td><td class="time">60min</td><td class="note">山顶观海平台</td></tr>
+    </tbody>
+  </table>
+  <div class="route-footer">
+    ⏱️ <strong>Day1 约 7 小时</strong> + <strong>Day2 约 4 小时</strong> · 需自驾/包车 · 住宿一晚 · 总预算约 ¥400-600
+  </div>
+</div>
+
+<!-- TRANSPORT TIPS -->
+<div class="transport-box">
+  <h4>🚌 交通贴士</h4>
+  <p>
+    <strong>老城区（路线1-3）：</strong>可骑共享单车或步行；广场轮渡单程¥1，建议备现金<br>
+    <strong>东海岸（路线4）：</strong>建议打车/自驾，十一合村离市区约30分钟车程<br>
+    <strong>南澳岛（路线5）：</strong>强烈建议租车自驾；岛上公交班次稀疏；过桥费¥96往返
+  </p>
+</div>
+
+<!-- FOOD TIPS -->
+<div class="food-box">
+  <h4>🍜 美食清单速查</h4>
+  <p>
+    <strong>必吃：</strong>杏花吴记牛肉火锅、小吴肠粉、春梅里卤鹅、老妈宫粽球、福合埕牛肉丸、飘香小食店（蚝烙）<br>
+    <strong>夜宵：</strong>龙眼南路美食街、果汁冰、砂锅粥、生腌海鲜<br>
+    <strong>手信：</strong>潮汕牛肉丸、卤鹅、腐乳饼、朥饼
+  </p>
+</div>
+
+<p class="print-only">—— 汕头 CityWalk · 2026年4月 ——</p>
+
+</body>
+</html>

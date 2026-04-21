@@ -1,0 +1,1166 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>长沙 CityWalk 路线地图</title>
+<!--
+  本页面使用腾讯地图 JavaScript API GL
+  使用前请替换下方 script src 中的 YOUR_KEY 为您的腾讯位置服务 Key
+  申请地址：https://lbs.qq.com/ → 控制台 → 应用管理 → 创建应用 → 添加 Key（Web端JS API）
+-->
+<script src="https://map.qq.com/api/gljs?v=1.exp&key=DXVBZ-HRV67-NFVXJ-P7TN4-5DFTH-VGFHG"></script>
+<script src="https://map.qq.com/api/js?v=2.exp&key=DXVBZ-HRV67-NFVXJ-P7TN4-5DFTH-VGFHG"></script>
+<link href="https://fonts.googleapis.com/css2?family=Ma+Shan+Zheng&family=Noto+Serif+SC:wght@300;400;600;700&family=Noto+Sans+SC:wght@300;400;500;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --ink: #1a1410;
+  --warm-dark: #3d2b1f;
+  --terracotta: #c0522a;
+  --amber: #d4942a;
+  --sand: #f5efe6;
+  --cream: #faf7f2;
+  --sea: #2a5c6e;
+  --muted: #7a6a5a;
+  --border: #ddd0c0;
+  --route1: #c0522a;
+  --route2: #d4942a;
+  --route3: #2a5c6e;
+  --route4: #7a5c8a;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  font-family: 'Noto Sans SC', sans-serif;
+  background: var(--cream);
+  color: var(--ink);
+  height: 100vh;
+  overflow: hidden;
+}
+
+/* ── 顶部导航 ── */
+.topbar {
+  position: fixed;
+  top: 0; left: 0; right: 0;
+  height: 56px;
+  background: rgba(250,247,242,0.96);
+  backdrop-filter: blur(8px);
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  padding: 0 20px;
+  z-index: 1000;
+  gap: 10px;
+}
+
+.topbar-title {
+  font-family: 'Ma Shan Zheng', cursive;
+  font-size: 20px;
+  color: var(--terracotta);
+  margin-right: 12px;
+  white-space: nowrap;
+}
+
+.route-tabs {
+  display: flex;
+  gap: 6px;
+  overflow-x: auto;
+  scrollbar-width: none;
+  flex: 1;
+}
+.route-tabs::-webkit-scrollbar { display: none; }
+
+.route-tab {
+  padding: 5px 14px;
+  border-radius: 20px;
+  border: 1.5px solid var(--border);
+  font-size: 13px;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: all 0.2s;
+  background: white;
+  color: var(--muted);
+}
+.route-tab:hover { border-color: var(--terracotta); color: var(--terracotta); }
+.route-tab.active {
+  color: white;
+  border-color: transparent;
+}
+
+/* ── 主体布局 ── */
+.main {
+  display: flex;
+  height: 100vh;
+  padding-top: 56px;
+}
+
+/* ── 地图 ── */
+#map-container {
+  flex: 1;
+  height: 100%;
+  background: #e8e4de;
+}
+
+/* ── 侧边面板 ── */
+.sidebar {
+  width: 340px;
+  height: 100%;
+  overflow-y: auto;
+  background: var(--cream);
+  border-left: 1px solid var(--border);
+  scrollbar-width: thin;
+  scrollbar-color: var(--border) transparent;
+}
+.sidebar::-webkit-scrollbar { width: 4px; }
+.sidebar::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+
+/* ── 城市介绍 ── */
+.city-intro {
+  padding: 20px 20px 16px;
+  border-bottom: 1px solid var(--border);
+}
+.city-name {
+  font-family: 'Ma Shan Zheng', cursive;
+  font-size: 28px;
+  color: var(--terracotta);
+}
+.city-sub {
+  font-size: 13px;
+  color: var(--muted);
+  margin-top: 4px;
+  line-height: 1.6;
+}
+.city-tags {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+  margin-top: 10px;
+}
+.city-tag {
+  padding: 3px 10px;
+  border-radius: 12px;
+  font-size: 11px;
+  background: var(--sand);
+  color: var(--warm-dark);
+  border: 1px solid var(--border);
+}
+
+/* ── 路线区块 ── */
+.route-section {
+  border-bottom: 1px solid var(--border);
+}
+
+.route-header {
+  padding: 14px 20px 10px;
+  cursor: pointer;
+  user-select: none;
+}
+.route-label {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.route-dot {
+  width: 12px; height: 12px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+.route-title {
+  font-family: 'Noto Serif SC', serif;
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--warm-dark);
+}
+.route-meta {
+  font-size: 12px;
+  color: var(--muted);
+  margin-top: 4px;
+  padding-left: 22px;
+}
+
+/* ── 站点列表 ── */
+.stations {
+  padding: 0 20px 14px;
+}
+
+.station-item {
+  display: flex;
+  gap: 12px;
+  padding: 10px 0;
+  cursor: pointer;
+  border-radius: 8px;
+  transition: background 0.15s;
+  padding-left: 6px;
+  padding-right: 6px;
+}
+.station-item:hover { background: var(--sand); }
+.station-item.highlighted { background: var(--sand); }
+
+.station-num {
+  width: 26px; height: 26px;
+  border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 12px;
+  font-weight: 700;
+  color: white;
+  flex-shrink: 0;
+  margin-top: 1px;
+}
+.station-info { flex: 1; }
+.station-name {
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--warm-dark);
+}
+.station-note {
+  font-size: 12px;
+  color: var(--muted);
+  margin-top: 3px;
+  line-height: 1.5;
+}
+.station-duration {
+  font-size: 11px;
+  color: var(--terracotta);
+  margin-top: 3px;
+  font-weight: 500;
+}
+
+/* ── 交通贴士 ── */
+.tips-section {
+  padding: 16px 20px 20px;
+}
+.tips-title {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--warm-dark);
+  margin-bottom: 8px;
+}
+.tip-item {
+  font-size: 12px;
+  color: var(--muted);
+  line-height: 1.7;
+  padding-left: 12px;
+  position: relative;
+}
+.tip-item::before {
+  content: '•';
+  position: absolute;
+  left: 0;
+  color: var(--amber);
+}
+
+/* ── 响应式 ── */
+@media (max-width: 768px) {
+  .main { flex-direction: column; }
+  #map-container { height: 50vh; }
+  .sidebar { width: 100%; height: 50vh; border-left: none; border-top: 1px solid var(--border); }
+  .topbar-title { font-size: 16px; }
+}
+
+/* ── 腾讯地图 API 未加载提示 ── */
+.map-placeholder {
+  width: 100%; height: 100%;
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  background: #f0ece6;
+  color: var(--muted);
+  gap: 12px;
+  text-align: center;
+  padding: 20px;
+}
+.map-placeholder h3 { font-size: 16px; color: var(--warm-dark); }
+.map-placeholder p { font-size: 13px; line-height: 1.8; max-width: 340px; }
+.map-placeholder a { color: var(--terracotta); }
+</style>
+</head>
+
+<body>
+<!-- ── 顶部导航 ── -->
+<div class="topbar">
+  <div class="topbar-title">长沙 CityWalk</div>
+  <div class="route-tabs" id="routeTabs">
+    <div class="route-tab active" data-route="r1" style="background:var(--route1)">① 湘江人文</div>
+    <div class="route-tab" data-route="r2">② 历史老街</div>
+    <div class="route-tab" data-route="r3">③ 文化山脉</div>
+    <div class="route-tab" data-route="r4">④ 夜味长沙</div>
+  </div>
+</div>
+
+<!-- ── 主体 ── -->
+<div class="main">
+  <!-- 地图区域（GL 地图 + v2 透明标注叠加层） -->
+  <div style="position:relative;flex:1;min-height:0">
+    <div id="map-container" style="width:100%;height:100%"></div>
+  </div>
+  <div class="sidebar" id="sidebar">
+
+    <!-- 城市介绍 -->
+    <div class="city-intro">
+      <div class="city-name">长沙</div>
+      <div class="city-sub">湖湘文化发源地 · 网红美食之都 · 千年星城</div>
+      <div class="city-tags">
+        <span class="city-tag">橘子洲头</span>
+        <span class="city-tag">岳麓书院</span>
+        <span class="city-tag">臭豆腐</span>
+        <span class="city-tag">茶颜悦色</span>
+        <span class="city-tag">文和友</span>
+        <span class="city-tag">马王堆</span>
+      </div>
+    </div>
+
+    <!-- 精准定位搜索工具 -->
+    <div style="margin:0 16px 16px;padding:14px 16px;background:linear-gradient(135deg,#f8f4ef,#f0ece4);border-radius:12px;border:1px solid #ddd0c0">
+      <div style="font-size:11px;font-weight:600;color:#c0522a;letter-spacing:2px;margin-bottom:10px">🔍 精准定位工具</div>
+      <div style="display:flex;gap:6px">
+        <input id="poi-search-input" type="text" placeholder="输入地名，搜索精确坐标"
+          style="flex:1;padding:7px 10px;border:1px solid #ccc;border-radius:8px;font-size:13px;font-family:'Noto Sans SC',sans-serif;outline:none"
+          onkeydown="if(event.key==='Enter')searchPOI()" />
+        <button onclick="searchPOI()" style="padding:7px 12px;background:#c0522a;color:white;border:none;border-radius:8px;font-size:13px;cursor:pointer;font-family:'Noto Sans SC',sans-serif">搜索</button>
+      </div>
+      <div id="poi-search-results" style="margin-top:8px;font-size:12px;color:#888"></div>
+      <div style="margin-top:8px;font-size:10px;color:#aaa;line-height:1.6">
+        💡 搜索地名获取精确坐标后，<b>点击地图上的 Pin</b> → 输入精准坐标 → 确认修正
+      </div>
+    </div>
+
+    <!-- 路线 1：湘江人文 -->
+    <div class="route-section" id="section-r1">
+      <div class="route-header" onclick="toggleRoute('r1')">
+        <div class="route-label">
+          <div class="route-dot" style="background:var(--route1)"></div>
+          <div class="route-title">① 湘江人文轴</div>
+        </div>
+        <div class="route-meta">全程约 5km · 步行为主 · 建议 6h</div>
+      </div>
+      <div class="stations" id="stations-r1">
+        <div class="station-item" onclick="focusStation('r1',0)">
+          <div class="station-num" style="background:var(--route1)">1</div>
+          <div class="station-info">
+            <div class="station-name">橘子洲头</div>
+            <div class="station-note">湘江中心沙洲，毛泽东青年艺术雕塑打卡地，可骑小火车环岛</div>
+            <div class="station-duration">⏱ 建议 1.5h · 免费（须预约）</div>
+          </div>
+        </div>
+        <div class="station-item" onclick="focusStation('r1',1)">
+          <div class="station-num" style="background:var(--route1)">2</div>
+          <div class="station-info">
+            <div class="station-name">湘江风光带（北段）</div>
+            <div class="station-note">沿江漫步，远眺岳麓山，是长沙最美骑行/步行道</div>
+            <div class="station-duration">⏱ 建议 40min · 免费</div>
+          </div>
+        </div>
+        <div class="station-item" onclick="focusStation('r1',2)">
+          <div class="station-num" style="background:var(--route1)">3</div>
+          <div class="station-info">
+            <div class="station-name">五一广场</div>
+            <div class="station-note">长沙最繁华的地标广场，茶颜悦色总店就在附近</div>
+            <div class="station-duration">⏱ 建议 30min · 免费</div>
+          </div>
+        </div>
+        <div class="station-item" onclick="focusStation('r1',3)">
+          <div class="station-num" style="background:var(--route1)">4</div>
+          <div class="station-info">
+            <div class="station-name">IFS 国际金融中心</div>
+            <div class="station-note">爬墙熊猫网红打卡，长沙最高购物中心，俯瞰城市全景</div>
+            <div class="station-duration">⏱ 建议 1h · 免费入场</div>
+          </div>
+        </div>
+        <div class="station-item" onclick="focusStation('r1',4)">
+          <div class="station-num" style="background:var(--route1)">5</div>
+          <div class="station-info">
+            <div class="station-name">黄兴南路步行街</div>
+            <div class="station-note">长沙最热闹的步行街，各类小吃、老字号、网红店云集</div>
+            <div class="station-duration">⏱ 建议 1h · 免费逛街</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 路线 2：历史老街 -->
+    <div class="route-section" id="section-r2">
+      <div class="route-header" onclick="toggleRoute('r2')">
+        <div class="route-label">
+          <div class="route-dot" style="background:var(--route2)"></div>
+          <div class="route-title">② 历史老街寻踪</div>
+        </div>
+        <div class="route-meta">全程约 3km · 纯步行 · 建议 4h</div>
+      </div>
+      <div class="stations" id="stations-r2" style="display:none">
+        <div class="station-item" onclick="focusStation('r2',0)">
+          <div class="station-num" style="background:var(--route2)">1</div>
+          <div class="station-info">
+            <div class="station-name">天心阁</div>
+            <div class="station-note">长沙现存最完整的古城楼，城墙上俯瞰老城区格局</div>
+            <div class="station-duration">⏱ 建议 1h · 门票¥35</div>
+          </div>
+        </div>
+        <div class="station-item" onclick="focusStation('r2',1)">
+          <div class="station-num" style="background:var(--route2)">2</div>
+          <div class="station-info">
+            <div class="station-name">坡子街</div>
+            <div class="station-note">百年美食老街，臭豆腐、糖油粑粑、老长沙粉面应有尽有</div>
+            <div class="station-duration">⏱ 建议 1.5h · 人均¥30-50</div>
+          </div>
+        </div>
+        <div class="station-item" onclick="focusStation('r2',2)">
+          <div class="station-num" style="background:var(--route2)">3</div>
+          <div class="station-info">
+            <div class="station-name">太平老街</div>
+            <div class="station-note">近2000年历史的老街，保留明清建筑风貌，文艺店铺林立</div>
+            <div class="station-duration">⏱ 建议 1h · 免费逛街</div>
+          </div>
+        </div>
+        <div class="station-item" onclick="focusStation('r2',3)">
+          <div class="station-num" style="background:var(--route2)">4</div>
+          <div class="station-info">
+            <div class="station-name">文和友（海信广场店）</div>
+            <div class="station-note">超级文和友，复刻80年代长沙市井街景，必打卡地</div>
+            <div class="station-duration">⏱ 建议 1h · 人均¥80-120</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 路线 3：文化山脉 -->
+    <div class="route-section" id="section-r3">
+      <div class="route-header" onclick="toggleRoute('r3')">
+        <div class="route-label">
+          <div class="route-dot" style="background:var(--route3)"></div>
+          <div class="route-title">③ 文化山脉半日游</div>
+        </div>
+        <div class="route-meta">全程约 4km · 需上山 · 建议 5h（早晨出发）</div>
+      </div>
+      <div class="stations" id="stations-r3" style="display:none">
+        <div class="station-item" onclick="focusStation('r3',0)">
+          <div class="station-num" style="background:var(--route3)">1</div>
+          <div class="station-info">
+            <div class="station-name">岳麓书院</div>
+            <div class="station-note">中国四大书院之首，千年学府，书香气息浓郁</div>
+            <div class="station-duration">⏱ 建议 1.5h · 门票¥50</div>
+          </div>
+        </div>
+        <div class="station-item" onclick="focusStation('r3',1)">
+          <div class="station-num" style="background:var(--route3)">2</div>
+          <div class="station-info">
+            <div class="station-name">爱晚亭</div>
+            <div class="station-note">中国四大名亭之一，"停车坐爱枫林晚"发源地，秋日赏枫胜境</div>
+            <div class="station-duration">⏱ 建议 40min · 岳麓山景区内</div>
+          </div>
+        </div>
+        <div class="station-item" onclick="focusStation('r3',2)">
+          <div class="station-num" style="background:var(--route3)">3</div>
+          <div class="station-info">
+            <div class="station-name">岳麓山顶</div>
+            <div class="station-note">湖南最高山峰之一，可俯瞰湘江全景，云山雾绕颇为壮观</div>
+            <div class="station-duration">⏱ 建议 1h · 门票含在岳麓山景区</div>
+          </div>
+        </div>
+        <div class="station-item" onclick="focusStation('r3',3)">
+          <div class="station-num" style="background:var(--route3)">4</div>
+          <div class="station-info">
+            <div class="station-name">湖南博物院</div>
+            <div class="station-note">马王堆汉墓出土文物，辛追夫人沉睡两千年，国家级重点博物馆</div>
+            <div class="station-duration">⏱ 建议 2h · 免费（需预约）</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 路线 4：夜味长沙 -->
+    <div class="route-section" id="section-r4">
+      <div class="route-header" onclick="toggleRoute('r4')">
+        <div class="route-label">
+          <div class="route-dot" style="background:var(--route4)"></div>
+          <div class="route-title">④ 夜味长沙</div>
+        </div>
+        <div class="route-meta">全程约 2km · 纯步行 · 建议 18:00 出发</div>
+      </div>
+      <div class="stations" id="stations-r4" style="display:none">
+        <div class="station-item" onclick="focusStation('r4',0)">
+          <div class="station-num" style="background:var(--route4)">1</div>
+          <div class="station-info">
+            <div class="station-name">火宫殿</div>
+            <div class="station-note">百年老字号，臭豆腐、糖油粑粑、口味虾，长沙湘菜的精神家园</div>
+            <div class="station-duration">⏱ 建议 1.5h · 人均¥60-100</div>
+          </div>
+        </div>
+        <div class="station-item" onclick="focusStation('r4',1)">
+          <div class="station-num" style="background:var(--route4)">2</div>
+          <div class="station-info">
+            <div class="station-name">潮宗街历史街区</div>
+            <div class="station-note">最原汁原味的长沙老街，居民生活气息浓厚，网红咖啡馆隐藏其中</div>
+            <div class="station-duration">⏱ 建议 1h · 免费</div>
+          </div>
+        </div>
+        <div class="station-item" onclick="focusStation('r4',2)">
+          <div class="station-num" style="background:var(--route4)">3</div>
+          <div class="station-info">
+            <div class="station-name">东瓜山夜市</div>
+            <div class="station-note">本地人最爱的夜宵市场，口味虾、小龙虾、各式烧烤，烟火气十足</div>
+            <div class="station-duration">⏱ 建议 1.5h · 人均¥50-80</div>
+          </div>
+        </div>
+        <div class="station-item" onclick="focusStation('r4',3)">
+          <div class="station-num" style="background:var(--route4)">4</div>
+          <div class="station-info">
+            <div class="station-name">德思勤城市广场</div>
+            <div class="station-note">24小时不打烊的综合体，深夜书店、live bar、夜宵全覆盖</div>
+            <div class="station-duration">⏱ 建议 1h · 免费入场</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 交通贴士 -->
+    <div class="tips-section">
+      <div class="tips-title">📌 长沙出行贴士</div>
+      <div class="tip-item">地铁覆盖全面：2号线连接橘子洲—五一广场，4号线直达湖南博物院</div>
+      <div class="tip-item">共享单车适合湘江风光带骑行，租一辆沿江骑是长沙特色体验</div>
+      <div class="tip-item">橘子洲须提前在微信公众号"橘子洲景区"预约，免费但名额有限</div>
+      <div class="tip-item">湖南博物院免费但须提前在官网/小程序预约，暑期和节假日需提前数天</div>
+      <div class="tip-item">茶颜悦色随处可见，长沙独有，离长沙后买不到，多喝几杯</div>
+      <div class="tip-item">最佳游览季：3-5月（温润）、9-11月（秋枫），避开7-8月高温梅雨</div>
+    </div>
+
+  </div><!-- /sidebar -->
+</div><!-- /main -->
+
+<script>
+// ── 长沙 CityWalk 路线数据（GCJ-02 坐标，精确版）──
+var routeData = {
+  r1: {
+    name: '湘江人文轴',
+    color: '#c0522a',
+    center: { lat: 28.1968, lng: 112.9720 },
+    zoom: 13,
+    stations: [
+      { name: '橘子洲头',        lat: 28.1870, lng: 112.9622, note: '毛泽东雕塑·环岛小火车' },
+      { name: '湘江风光带北段',   lat: 28.1988, lng: 112.9710, note: '沿江漫步·远眺岳麓山' },
+      { name: '五一广场',         lat: 28.1967, lng: 112.9782, note: '茶颜悦色·地标广场' },
+      { name: 'IFS国际金融中心',   lat: 28.1971, lng: 112.9803, note: '爬墙熊猫·俯瞰城市' },
+      { name: '黄兴南路步行街',   lat: 28.1956, lng: 112.9791, note: '美食步行街·老字号集中' }
+    ]
+  },
+  r2: {
+    name: '历史老街寻踪',
+    color: '#d4942a',
+    center: { lat: 28.1872, lng: 112.9765 },
+    zoom: 14,
+    stations: [
+      { name: '天心阁',           lat: 28.1843, lng: 112.9801, note: '古城楼·俯瞰老城' },
+      { name: '坡子街',           lat: 28.1906, lng: 112.9773, note: '臭豆腐·糖油粑粑' },
+      { name: '太平老街',         lat: 28.1931, lng: 112.9777, note: '明清古建·文艺店铺' },
+      { name: '文和友（海信广场）', lat: 28.1973, lng: 112.9778, note: '80年代市井复原·必打卡' }
+    ]
+  },
+  r3: {
+    name: '文化山脉半日游',
+    color: '#2a5c6e',
+    center: { lat: 28.1830, lng: 112.9380 },
+    zoom: 14,
+    stations: [
+      { name: '岳麓书院',         lat: 28.1839, lng: 112.9353, note: '中国四大书院之首' },
+      { name: '爱晚亭',           lat: 28.1841, lng: 112.9323, note: '四大名亭·秋日枫叶' },
+      { name: '岳麓山顶',         lat: 28.1883, lng: 112.9282, note: '俯瞰湘江全景' },
+      { name: '湖南博物院',       lat: 28.2003, lng: 112.9737, note: '马王堆汉墓·辛追夫人' }
+    ]
+  },
+  r4: {
+    name: '夜味长沙',
+    color: '#7a5c8a',
+    center: { lat: 28.1945, lng: 112.9782 },
+    zoom: 14,
+    stations: [
+      { name: '火宫殿',           lat: 28.1913, lng: 112.9772, note: '百年老字号·湘菜精髓' },
+      { name: '潮宗街历史街区',   lat: 28.2002, lng: 112.9745, note: '老街烟火气·网红咖啡' },
+      { name: '东瓜山夜市',       lat: 28.1882, lng: 112.9968, note: '本地夜宵圣地·口味虾' },
+      { name: '德思勤城市广场',   lat: 28.1778, lng: 112.9924, note: '24h营业·深夜书店' }
+    ]
+  }
+};
+
+var activeRoute = 'r1';
+var map = null;
+var markerLayers = {};
+var polylineLayers = {};
+var infoWindow = null;
+var editingStation = null;  // 当前正在编辑的站点 {routeKey, index}
+
+// ── Canvas 绘制高质量 Pin 图标（兼容所有浏览器）──
+function makePinIcon(num, color) {
+  var c = document.createElement('canvas');
+  c.width = 48; c.height = 56;
+  var ctx = c.getContext('2d');
+
+  // 针尖阴影
+  ctx.shadowColor = 'rgba(0,0,0,0.25)';
+  ctx.shadowBlur = 4;
+  ctx.shadowOffsetY = 2;
+
+  // 针身形（倒水滴）
+  ctx.beginPath();
+  ctx.moveTo(24, 54);
+  ctx.bezierCurveTo(10, 38, 4, 24, 4, 16);
+  ctx.arc(24, 16, 20, Math.PI, 0);
+  ctx.bezierCurveTo(44, 24, 38, 38, 24, 54);
+  ctx.closePath();
+  ctx.fillStyle = color;
+  ctx.fill();
+
+  // 白色中心圆
+  ctx.shadowColor = 'transparent';
+  ctx.beginPath();
+  ctx.arc(24, 16, 13, 0, Math.PI * 2);
+  ctx.fillStyle = '#ffffff';
+  ctx.fill();
+
+  // 编号文字
+  ctx.fillStyle = color;
+  ctx.font = 'bold 12px \"Noto Sans SC\", sans-serif';
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  ctx.fillText(num > 9 ? String(num) : String(num), 24, 16);
+
+  return c.toDataURL('image/png');
+}
+
+// ── 初始化地图 ──
+function initMap() {
+  if (typeof TMap === 'undefined') {
+    document.getElementById('map-container').innerHTML =
+      '<div class="map-placeholder">' +
+      '<h3>🗺️ 腾讯地图未加载</h3>' +
+      '<p>当前 Key 可能存在域名限制，请在 <a href="https://lbs.qq.com/" target="_blank">lbs.qq.com 控制台</a> 检查 Key 的 <b>「服务类型」</b>（须为 <b>Web端 JS API</b>）和 <b>「Referer 白名单」</b>设置。</p>' +
+      '<p style="margin-top:8px;font-size:13px;color:#888">右侧路线面板功能完整可用。</p>' +
+      '</div>';
+    return;
+  }
+
+  var data = routeData[activeRoute];
+  map = new TMap.Map('map-container', {
+    center: new TMap.LatLng(data.center.lat, data.center.lng),
+    zoom: data.zoom,
+    pitch: 0
+  });
+
+  // 后台预加载所有路线图层
+  preloadAllRoutes();
+
+  // 仅显示当前激活路线
+  showRoute(activeRoute);
+}
+
+// ── 初始化 v2 标注覆盖层（用于拖拽和搜索）──
+function initV2Overlay() {
+  if (typeof qq === 'undefined') return;
+  v2Map = new qq.maps.Map('map-container', {
+    zoom: map.getZoom(),
+    center: map.getCenter()
+  });
+
+  // 创建可拖拽标注层
+  rebuildV2Markers(activeRoute);
+
+  // v2 地图跟随 GL 地图移动
+  qq.maps.event.addListener(v2Map, 'center_changed', function() {
+    if (map) {
+      var c = v2Map.getCenter();
+      map.setCenter(new TMap.LatLng(c.lat, c.lng));
+    }
+  });
+}
+
+// ── 重建 v2 可拖拽标注 ──
+function rebuildV2Markers(routeKey) {
+  // 清除旧标注
+  Object.keys(v2Markers).forEach(function(key) {
+    v2Markers[key].setMap(null);
+  });
+  v2Markers = {};
+
+  var rd = routeData[routeKey];
+  if (!rd || !v2Map) return;
+
+  rd.stations.forEach(function(s, i) {
+    var pinColor = rd.color;
+    var anchor = new qq.maps.Point(20, 46);
+    var marker = new qq.maps.Marker({
+      position: new qq.maps.LatLng(s.lat, s.lng),
+      map: v2Map,
+      draggable: true,
+      anchor: anchor
+    });
+
+    // 拖拽时显示提示
+    var tooltip = new qq.maps.InfoWindow({ map: v2Map });
+    tooltip.close();
+
+    qq.maps.event.addListener(marker, 'dragend', function() {
+      var pos = marker.getPosition();
+      var lat = pos.getLat().toFixed(6);
+      var lng = pos.getLng().toFixed(6);
+
+      // 更新 routeData 中的坐标
+      routeData[routeKey].stations[i].lat = parseFloat(lat);
+      routeData[routeKey].stations[i].lng = parseFloat(lng);
+
+      // 同步更新 GL 折线
+      syncGLPolyline(routeKey);
+
+      // 显示修正后的坐标
+      tooltip.setContent('<div style="font-family:Noto Sans SC;font-size:12px;padding:4px 8px;background:#fff;border-radius:4px;box-shadow:0 2px 8px rgba(0,0,0,0.15);white-space:nowrap">' +
+        '<b style="color:' + pinColor + '">' + s.name + '</b><br>' +
+        '<span style="color:#888">精准坐标：</span>' +
+        '<input id="dragCoord-' + routeKey + '-' + i + '" value="' + lat + ', ' + lng + '" ' +
+        'style="border:1px solid #ddd;border-radius:3px;padding:1px 4px;font-size:11px;width:190px;margin-top:4px" ' +
+        "onkeydown=\"if(event.key==='Enter')applyManualCoord('" + routeKey + "'," + i + ",this.value)\" />" +
+        '<div style="font-size:10px;color:#aaa;margin-top:3px">回车确认，或直接拖动 Pin 调整</div>' +
+        '</div>');
+      tooltip.open();
+      tooltip.setPosition(pos);
+    });
+
+    // 点击显示坐标
+    qq.maps.event.addListener(marker, 'click', function() {
+      var pos = marker.getPosition();
+      tooltip.setContent('<div style="font-family:Noto Sans SC;font-size:12px;padding:6px 10px">' +
+        '<b style="color:' + pinColor + '">' + s.name + '</b><br>' +
+        '<span style="color:#555">经度 ' + pos.getLng().toFixed(6) + '</span><br>' +
+        '<span style="color:#555">纬度 ' + pos.getLat().toFixed(6) + '</span>' +
+        '</div>');
+      tooltip.open();
+      tooltip.setPosition(pos);
+    });
+
+    v2Markers[routeKey + '-p' + i] = marker;
+  });
+}
+
+// ── 同步 v2 标注层到当前地图视野 ──
+function syncV2Markers() {
+  if (!v2Map || !map) return;
+  var c = map.getCenter();
+  v2Map.setCenter(new qq.maps.LatLng(c.lat, c.lng));
+  v2Map.setZoom(map.getZoom());
+}
+
+// ── v2 SearchService 精准搜索 POI ──
+function searchPOI() {
+  var keyword = document.getElementById('poi-search-input').value.trim();
+  if (!keyword) return;
+  var resultsDiv = document.getElementById('poi-search-results');
+  resultsDiv.innerHTML = '<span style="color:#888">🔄 搜索中...</span>';
+
+  if (typeof qq === 'undefined' || typeof qq.maps === 'undefined') {
+    resultsDiv.innerHTML = '<span style="color:#c0522a">⚠️ 腾讯地图 v2 API 未加载，搜索不可用</span>';
+    return;
+  }
+
+  var searchService = new qq.maps.SearchService({
+    complete: function(results) {
+      if (!results.detail || !results.detail.pois || results.detail.pois.length === 0) {
+        resultsDiv.innerHTML = '<span style="color:#888">未找到结果</span>';
+        return;
+      }
+      var pois = results.detail.pois;
+      var html = '<div style="max-height:200px;overflow-y:auto;margin-top:4px">';
+      pois.slice(0, 5).forEach(function(poi, idx) {
+        var lat = poi.latLng.lat.toFixed(6);
+        var lng = poi.latLng.lng.toFixed(6);
+        html += '<div style="padding:6px 0;border-bottom:1px solid #eee;cursor:pointer" onclick="flyToPOI(' + lat + ',' + lng + ',\'' + poi.name.replace(/'/g, "\\'") + '\')">' +
+          '<div style="font-weight:500;color:#333;font-size:13px">' + poi.name + '</div>' +
+          '<div style="color:#888;font-size:11px;margin-top:2px">' + poi.address + '</div>' +
+          '<div style="color:#c0522a;font-size:11px;margin-top:2px">📍 ' + lat + ', ' + lng + ' <span style="color:#aaa">（点击定位）</span></div>' +
+          '</div>';
+      });
+      html += '</div>';
+      resultsDiv.innerHTML = html;
+
+      // 自动飞到第一个结果
+      if (pois[0]) {
+        flyToPOI(pois[0].latLng.lat, pois[0].latLng.lng, pois[0].name);
+      }
+    },
+    error: function() {
+      resultsDiv.innerHTML = '<span style="color:#c0522a">⚠️ 搜索失败，请检查 Key 配置</span>';
+    }
+  });
+
+  searchService.setLocation('长沙');
+  searchService.setPageCapacity(5);
+  searchService.search(keyword);
+}
+
+// ── 飞到 POI 位置 ──
+function flyToPOI(lat, lng, name) {
+  if (map) {
+    map.setCenter(new TMap.LatLng(lat, lng));
+    map.setZoom(16);
+  }
+  if (v2Map) {
+    v2Map.setCenter(new qq.maps.LatLng(lat, lng));
+    v2Map.setZoom(16);
+  }
+  document.getElementById('poi-search-results').innerHTML =
+    '<span style="color:#2a7a5c">✅ 已定位：' + name + '<br><span style="font-size:11px;color:#888">经度 ' + lng.toFixed(6) + ' · 纬度 ' + lat.toFixed(6) + '</span></span>';
+}
+
+// ── 手动输入坐标确认 ──
+function applyManualCoord(routeKey, index, value) {
+  var parts = value.split(',').map(function(v) { return parseFloat(v.trim()); });
+  if (parts.length === 2 && !isNaN(parts[0]) && !isNaN(parts[1])) {
+    routeData[routeKey].stations[index].lat = parts[0];
+    routeData[routeKey].stations[index].lng = parts[1];
+    syncGLPolyline(routeKey);
+
+    // 更新 v2 marker 位置
+    var v2Key = routeKey + '-p' + index;
+    if (v2Markers[v2Key]) {
+      v2Markers[v2Key].setPosition(new qq.maps.LatLng(parts[0], parts[1]));
+    }
+    alert('坐标已更新：' + parts[0] + ', ' + parts[1]);
+  } else {
+    alert('坐标格式错误，请输入：纬度, 经度（如 28.1967, 112.9782）');
+  }
+}
+
+// ── 同步 GL 折线到最新坐标 ──
+function syncGLPolyline(routeKey) {
+  var rd = routeData[routeKey];
+  if (!polylineLayers[routeKey]) return;
+  var paths = rd.stations.map(function(s) {
+    return new TMap.LatLng(s.lat, s.lng);
+  });
+  polylineLayers[routeKey].updateGeometries([{
+    id: routeKey + '-line',
+    styleId: 'line-' + routeKey,
+    paths: paths
+  }]);
+}
+
+// ── 预加载：地图就绪后，在后台悄悄初始化所有路线图层 ──
+function preloadAllRoutes() {
+  Object.keys(routeData).forEach(function(key) {
+    if (!markerLayers[key]) {
+      buildRouteLayer(key);
+    }
+  });
+}
+
+// ── 构建单个路线的完整图层（折线+标记），创建后 map=null，后续仅通过 setMap 显隐 ──
+function buildRouteLayer(routeKey) {
+  var rd = routeData[routeKey];
+  var color = rd.color;
+
+  // 折线 geometry
+  var polylineGeos = [{
+    id: routeKey + '-line',
+    styleId: 'line-' + routeKey,
+    paths: rd.stations.map(function(s) { return new TMap.LatLng(s.lat, s.lng); })
+  }];
+
+  var polylineStyles = {};
+  polylineStyles['line-' + routeKey] = new TMap.PolylineStyle({
+    color: color,
+    width: 5,
+    borderWidth: 2,
+    borderColor: 'rgba(255,255,255,0.8)',
+    lineCap: 'round'
+  });
+
+  var polyline = new TMap.MultiPolyline({
+    id: routeKey + '-polyline',
+    map: null,
+    styles: polylineStyles,
+    geometries: polylineGeos
+  });
+
+  // 每个 station 单独的样式（编号 pin）
+  var markerStyles = {};
+  var markerGeos = rd.stations.map(function(s, i) {
+    var sId = 's' + i;
+    markerStyles[sId] = new TMap.MarkerStyle({
+      width: 40, height: 48,
+      anchor: { x: 20, y: 46 },
+      src: makePinIcon(i + 1, color)
+    });
+    return {
+      id: routeKey + '-p' + i,
+      styleId: sId,
+      position: new TMap.LatLng(s.lat, s.lng),
+      properties: { routeKey: routeKey, index: i, name: s.name, note: s.note, color: color }
+    };
+  });
+
+  var marker = new TMap.MultiMarker({
+    id: routeKey + '-markers',
+    map: null,
+    styles: markerStyles,
+    geometries: markerGeos
+  });
+
+  // 标记点击 → 打开坐标编辑器
+  marker.on('click', function(e) {
+    var props = e.geometry.properties;
+    highlightStation(props.routeKey, props.index);
+    openCoordEditor(props.routeKey, props.index);
+  });
+  marker.on('mouseover', function() { document.body.style.cursor = 'pointer'; });
+  marker.on('mouseout', function() { document.body.style.cursor = ''; });
+
+  polylineLayers[routeKey] = polyline;
+  markerLayers[routeKey] = marker;
+}
+
+// ── 显示路线（setMap 绑定地图）──
+function showRoute(routeKey) {
+  var rd = routeData[routeKey];
+  if (polylineLayers[routeKey]) polylineLayers[routeKey].setMap(map);
+  if (markerLayers[routeKey]) markerLayers[routeKey].setMap(map);
+  map.setCenter(new TMap.LatLng(rd.center.lat, rd.center.lng));
+  map.setZoom(rd.zoom);
+}
+
+// ── 隐藏路线（setMap 剥离地图）──
+function hideRoute(routeKey) {
+  if (polylineLayers[routeKey]) polylineLayers[routeKey].setMap(null);
+  if (markerLayers[routeKey]) markerLayers[routeKey].setMap(null);
+}
+
+// ── 打开坐标编辑器（点击 Pin 时）──
+function openCoordEditor(routeKey, index) {
+  var s = routeData[routeKey].stations[index];
+  var color = routeData[routeKey].color;
+  var pos = new TMap.LatLng(s.lat, s.lng);
+
+  if (infoWindow) { infoWindow.setMap(null); infoWindow = null; }
+
+  var content = '<div style="padding:14px 16px;min-width:240px;font-family:\"Noto Sans SC\",sans-serif;background:#fff;border-radius:10px">' +
+    '<div style="font-size:15px;font-weight:600;color:' + color + ';margin-bottom:4px">' + s.name + '</div>' +
+    '<div style="font-size:12px;color:#888;margin-bottom:10px">' + s.note + '</div>' +
+
+    '<div style="font-size:11px;color:#666;margin-bottom:6px;font-weight:500">📍 当前坐标</div>' +
+    '<div style="font-size:12px;color:#333;margin-bottom:10px;padding:6px 8px;background:#f8f4ef;border-radius:6px;font-family:monospace">' +
+    '纬度 <span style="color:' + color + ';font-weight:600">' + s.lat + '</span> &nbsp;|&nbsp; ' +
+    '经度 <span style="color:' + color + ';font-weight:600">' + s.lng + '</span>' +
+    '</div>' +
+
+    '<div style="font-size:11px;color:#666;margin-bottom:6px;font-weight:500">✏️ 精准修正（输入后回车）</div>' +
+    '<div style="display:flex;gap:6px;margin-bottom:6px">' +
+    '<input id="edit-lat-' + routeKey + '-' + index + '" type="text" placeholder="纬度 如 28.1967" ' +
+    'value="' + s.lat + '" ' +
+    'style="flex:1;padding:5px 8px;border:1px solid #ddd;border-radius:6px;font-size:12px;font-family:monospace;outline:none">' +
+    '<input id="edit-lng-' + routeKey + '-' + index + '" type="text" placeholder="经度 如 112.9782" ' +
+    'value="' + s.lng + '" ' +
+    'style="flex:1;padding:5px 8px;border:1px solid #ddd;border-radius:6px;font-size:12px;font-family:monospace;outline:none">' +
+    '</div>' +
+    '<button onclick="applyCoord(\'' + routeKey + '\',' + index + ')" ' +
+    'style="width:100%;padding:7px;background:' + color + ';color:white;border:none;border-radius:6px;' +
+    'font-size:13px;cursor:pointer;font-family:\'Noto Sans SC\',sans-serif;font-weight:500">' +
+    '✅ 确认修正坐标</button>' +
+
+    '<div style="margin-top:8px;font-size:10px;color:#aaa;line-height:1.5">💡 使用上方搜索框搜索地点，获取精准坐标后再填入</div>' +
+    '</div>';
+
+  infoWindow = new TMap.InfoWindow({
+    map: map,
+    position: pos,
+    content: content,
+    offset: { x: 0, y: -28 },
+    enableCloseButton: true,
+    enablePan: true
+  });
+
+  editingStation = { routeKey: routeKey, index: index };
+
+  // 绑定回车键
+  setTimeout(function() {
+    var latInput = document.getElementById('edit-lat-' + routeKey + '-' + index);
+    var lngInput = document.getElementById('edit-lng-' + routeKey + '-' + index);
+    if (latInput) latInput.addEventListener('keydown', function(e) { if (e.key === 'Enter') applyCoord(routeKey, index); });
+    if (lngInput) lngInput.addEventListener('keydown', function(e) { if (e.key === 'Enter') applyCoord(routeKey, index); });
+  }, 100);
+}
+
+// ── 确认修正坐标 ──
+function applyCoord(routeKey, index) {
+  var latEl = document.getElementById('edit-lat-' + routeKey + '-' + index);
+  var lngEl = document.getElementById('edit-lng-' + routeKey + '-' + index);
+  if (!latEl || !lngEl) return;
+
+  var lat = parseFloat(latEl.value.trim());
+  var lng = parseFloat(lngEl.value.trim());
+
+  if (isNaN(lat) || isNaN(lng) || lat < 20 || lat > 60 || lng < 70 || lng > 140) {
+    alert('坐标格式有误，请输入正确的经纬度（如 28.1967, 112.9782）');
+    return;
+  }
+
+  // 更新数据
+  routeData[routeKey].stations[index].lat = lat;
+  routeData[routeKey].stations[index].lng = lng;
+
+  // 同步折线 geometry
+  if (polylineLayers[routeKey]) {
+    var paths = routeData[routeKey].stations.map(function(s) {
+      return new TMap.LatLng(s.lat, s.lng);
+    });
+    polylineLayers[routeKey].updateGeometries([{
+      id: routeKey + '-line',
+      paths: paths
+    }]);
+  }
+
+  // 同步 marker position
+  if (markerLayers[routeKey]) {
+    var geos = markerLayers[routeKey].getGeometries();
+    if (geos[index]) {
+      geos[index].position = new TMap.LatLng(lat, lng);
+      markerLayers[routeKey].updateGeometries([geos[index]]);
+    }
+  }
+
+  // 关闭 InfoWindow
+  if (infoWindow) { infoWindow.setMap(null); infoWindow = null; }
+
+  // 高亮侧边栏对应站点
+  highlightStation(routeKey, index);
+
+  alert('✅ 坐标已修正！\n纬度: ' + lat + '\n经度: ' + lng);
+}
+
+// ── 打开信息窗口（站点简介）──
+function openInfoWindow(routeKey, index) {
+  var s = routeData[routeKey].stations[index];
+  var color = routeData[routeKey].color;
+  var pos = new TMap.LatLng(s.lat, s.lng);
+
+  if (infoWindow) { infoWindow.setMap(null); infoWindow = null; }
+
+  var content = '<div style="padding:12px 16px;min-width:200px;font-family:\"Noto Sans SC\",sans-serif">' +
+    '<div style="font-size:15px;font-weight:600;color:' + color + ';margin-bottom:6px">' + s.name + '</div>' +
+    '<div style="font-size:13px;color:#555;line-height:1.6;margin-bottom:8px">' + s.note + '</div>' +
+    '<div style="font-size:11px;color:#888;padding:4px 8px;background:#f8f4ef;border-radius:4px;font-family:monospace">' +
+    '📍 ' + s.lat + ', ' + s.lng +
+    '</div>' +
+    '<div style="margin-top:8px;font-size:11px;color:#aaa">点击「修正坐标」手动校准位置</div>' +
+    '</div>';
+
+  infoWindow = new TMap.InfoWindow({
+    map: map,
+    position: pos,
+    content: content,
+    offset: { x: 0, y: -28 },
+    enableCloseButton: true,
+    enablePan: true
+  });
+}
+
+// ── 生成 SVG 编号图标 ──
+function makeSvgIcon(num, color) {
+  var svg = '<svg xmlns="http://www.w3.org/2000/svg" width="32" height="36" viewBox="0 0 32 36">' +
+    '<path d="M16 2C9.373 2 4 7.373 4 14c0 9 12 22 12 22s12-13 12-22C28 7.373 22.627 2 16 2z" ' +
+    'fill="' + color + '" stroke="white" stroke-width="2"/>' +
+    '<circle cx="16" cy="14" r="7" fill="white"/>' +
+    '<text x="16" y="18.5" text-anchor="middle" font-size="9" font-weight="bold" ' +
+    'fill="' + color + '" font-family="Noto Sans SC,sans-serif">' + num + '</text>' +
+    '</svg>';
+  return 'data:image/svg+xml;charset=UTF-8,' + encodeURIComponent(svg);
+}
+
+// ── 切换路线（关闭 InfoWindow）──
+function switchRoute(routeKey) {
+  if (activeRoute === routeKey) return;
+
+  // 关闭当前 InfoWindow
+  if (infoWindow) { infoWindow.setMap(null); infoWindow = null; }
+
+  // 隐藏旧路线
+  hideRoute(activeRoute);
+
+  activeRoute = routeKey;
+
+  // 显示新路线
+  showRoute(routeKey);
+
+  // 更新 Tab 样式
+  var tabs = document.querySelectorAll('.route-tab');
+  tabs.forEach(function(tab) {
+    var isActive = tab.dataset.route === routeKey;
+    tab.classList.toggle('active', isActive);
+    if (isActive) {
+      tab.style.background = routeData[routeKey].color;
+    } else {
+      tab.style.background = 'white';
+      tab.style.color = '#7a6a5a';
+    }
+  });
+}
+
+// ── 展开/折叠路线面板 ──
+function toggleRoute(routeKey) {
+  switchRoute(routeKey);
+
+  // 折叠其他路线，展开当前路线
+  Object.keys(routeData).forEach(function(key) {
+    var el = document.getElementById('stations-' + key);
+    if (el) el.style.display = key === routeKey ? 'block' : 'none';
+  });
+
+  // 滚动到当前路线
+  var section = document.getElementById('section-' + routeKey);
+  if (section) section.scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+// ── 点击标记：高亮站点 ──
+function highlightStation(routeKey, index) {
+  switchRoute(routeKey);
+  // 展开对应路线
+  Object.keys(routeData).forEach(function(key) {
+    var el = document.getElementById('stations-' + key);
+    if (el) el.style.display = key === routeKey ? 'block' : 'none';
+  });
+  // 高亮站点行
+  var items = document.querySelectorAll('#stations-' + routeKey + ' .station-item');
+  items.forEach(function(item, i) {
+    item.classList.toggle('highlighted', i === index);
+  });
+  if (items[index]) items[index].scrollIntoView({ behavior: 'smooth', block: 'center' });
+}
+
+// ── 点击站点：飞到标记 ──
+function focusStation(routeKey, index) {
+  switchRoute(routeKey);
+  var station = routeData[routeKey].stations[index];
+  if (map) {
+    map.setCenter(new TMap.LatLng(station.lat, station.lng));
+    map.setZoom(16);
+  }
+  // 高亮
+  var items = document.querySelectorAll('#stations-' + routeKey + ' .station-item');
+  items.forEach(function(item, i) {
+    item.classList.toggle('highlighted', i === index);
+  });
+}
+
+// ── 顶部 Tab 点击 ──
+document.getElementById('routeTabs').addEventListener('click', function(e) {
+  var tab = e.target.closest('.route-tab');
+  if (tab) toggleRoute(tab.dataset.route);
+});
+
+// ── 启动 ──
+window.mapInitialized = false;
+window.addEventListener('load', function() {
+  if (!window.mapInitialized) {
+    window.mapInitialized = true;
+    initMap();
+  }
+});
+
+// 初始展开第一条路线的站点
+document.getElementById('stations-r1').style.display = 'block';
+</script>
+</body>
+</html>
