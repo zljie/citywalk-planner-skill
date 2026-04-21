@@ -1,0 +1,373 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CityWalk Planner - 城市漫步路线</title>
+<link href="https://fonts.googleapis.com/css2?family=Ma+Shan+Zheng&family=Noto+Serif+SC:wght@300;400;600;700&family=Noto+Sans+SC:wght@300;400;500;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --ink: #1a1410;
+  --warm-dark: #3d2b1f;
+  --terracotta: #c0522a;
+  --amber: #d4942a;
+  --sand: #f5efe6;
+  --cream: #faf7f2;
+  --sea: #2a5c6e;
+  --muted: #7a6a5a;
+  --border: #ddd0c0;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  font-family: 'Noto Sans SC', sans-serif;
+  background: var(--cream);
+  color: var(--ink);
+  min-height: 100vh;
+  line-height: 1.6;
+}
+
+/* ── 头部 ── */
+header {
+  background: linear-gradient(135deg, var(--warm-dark) 0%, var(--terracotta) 100%);
+  color: white;
+  padding: 60px 20px;
+  text-align: center;
+}
+
+header h1 {
+  font-family: 'Ma Shan Zheng', cursive;
+  font-size: 48px;
+  margin-bottom: 16px;
+}
+
+header p {
+  font-size: 18px;
+  opacity: 0.9;
+  max-width: 600px;
+  margin: 0 auto;
+}
+
+/* ── 主内容 ── */
+main {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 40px 20px;
+}
+
+.section-title {
+  font-family: 'Noto Serif SC', serif;
+  font-size: 28px;
+  color: var(--warm-dark);
+  margin-bottom: 24px;
+  text-align: center;
+}
+
+/* ── 城市卡片网格 ── */
+.city-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  gap: 24px;
+  margin-bottom: 60px;
+}
+
+.city-card {
+  background: white;
+  border-radius: 16px;
+  overflow: hidden;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+  transition: transform 0.2s, box-shadow 0.2s;
+  border: 1px solid var(--border);
+}
+
+.city-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 8px 30px rgba(0,0,0,0.12);
+}
+
+.city-card-header {
+  height: 160px;
+  background: linear-gradient(135deg, var(--terracotta) 0%, var(--amber) 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+}
+
+.city-card-header.sea {
+  background: linear-gradient(135deg, var(--sea) 0%, #3d7a8c 100%);
+}
+
+.city-icon {
+  font-size: 64px;
+  opacity: 0.9;
+}
+
+.city-badge {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  background: rgba(255,255,255,0.95);
+  padding: 4px 12px;
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--warm-dark);
+}
+
+.city-card-body {
+  padding: 24px;
+}
+
+.city-name {
+  font-family: 'Ma Shan Zheng', cursive;
+  font-size: 28px;
+  color: var(--warm-dark);
+  margin-bottom: 8px;
+}
+
+.city-desc {
+  font-size: 14px;
+  color: var(--muted);
+  margin-bottom: 16px;
+  line-height: 1.6;
+}
+
+.city-routes {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-bottom: 20px;
+}
+
+.route-tag {
+  padding: 4px 10px;
+  border-radius: 12px;
+  font-size: 11px;
+  background: var(--sand);
+  color: var(--warm-dark);
+  border: 1px solid var(--border);
+}
+
+.city-card-footer {
+  display: flex;
+  gap: 10px;
+}
+
+.btn {
+  flex: 1;
+  padding: 10px 16px;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 500;
+  text-align: center;
+  cursor: pointer;
+  text-decoration: none;
+  transition: all 0.2s;
+  border: none;
+  font-family: inherit;
+}
+
+.btn-primary {
+  background: var(--terracotta);
+  color: white;
+}
+
+.btn-primary:hover {
+  background: #a84520;
+}
+
+.btn-secondary {
+  background: var(--sand);
+  color: var(--warm-dark);
+  border: 1px solid var(--border);
+}
+
+.btn-secondary:hover {
+  background: var(--border);
+}
+
+/* ── 关于部分 ── */
+.about-section {
+  background: white;
+  border-radius: 16px;
+  padding: 40px;
+  margin-bottom: 40px;
+  border: 1px solid var(--border);
+}
+
+.about-section h2 {
+  font-family: 'Noto Serif SC', serif;
+  font-size: 24px;
+  color: var(--warm-dark);
+  margin-bottom: 16px;
+}
+
+.about-section p {
+  color: var(--muted);
+  margin-bottom: 12px;
+}
+
+.feature-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 16px;
+  margin-top: 24px;
+}
+
+.feature-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 16px;
+  background: var(--cream);
+  border-radius: 12px;
+}
+
+.feature-icon {
+  font-size: 24px;
+}
+
+.feature-text {
+  font-size: 14px;
+  color: var(--warm-dark);
+}
+
+/* ── 页脚 ── */
+footer {
+  text-align: center;
+  padding: 40px 20px;
+  color: var(--muted);
+  font-size: 14px;
+  border-top: 1px solid var(--border);
+}
+
+footer a {
+  color: var(--terracotta);
+  text-decoration: none;
+}
+
+footer a:hover {
+  text-decoration: underline;
+}
+
+/* ── 响应式 ── */
+@media (max-width: 768px) {
+  header h1 { font-size: 36px; }
+  header p { font-size: 16px; }
+  .city-grid { grid-template-columns: 1fr; }
+  .about-section { padding: 24px; }
+}
+</style>
+</head>
+<body>
+
+<header>
+  <h1>🚶 CityWalk Planner</h1>
+  <p>发现城市之美，用脚步丈量每一座城的温度<br>精心规划的 CityWalk 路线，带你深入探索城市的灵魂</p>
+</header>
+
+<main>
+  <h2 class="section-title">📍 已上线城市</h2>
+  
+  <div class="city-grid">
+    <!-- 长沙 -->
+    <div class="city-card">
+      <div class="city-card-header">
+        <span class="city-icon">🏛️</span>
+        <span class="city-badge">热门推荐</span>
+      </div>
+      <div class="city-card-body">
+        <h3 class="city-name">长沙</h3>
+        <p class="city-desc">湖湘文化发源地，网红美食之都。橘子洲头、岳麓书院、茶颜悦色、口味虾，感受千年星城的烟火气。</p>
+        <div class="city-routes">
+          <span class="route-tag">湘江人文</span>
+          <span class="route-tag">历史老街</span>
+          <span class="route-tag">文化山脉</span>
+          <span class="route-tag">夜味长沙</span>
+        </div>
+        <div class="city-card-footer">
+          <a href="changsha-citywalk.html" class="btn btn-primary">🗺️ 查看地图</a>
+          <a href="changsha-citywalk.html" class="btn btn-secondary">📋 路线详情</a>
+        </div>
+      </div>
+    </div>
+
+    <!-- 占位：汕头 -->
+    <div class="city-card">
+      <div class="city-card-header sea">
+        <span class="city-icon">🌊</span>
+        <span class="city-badge">即将上线</span>
+      </div>
+      <div class="city-card-body">
+        <h3 class="city-name">汕头</h3>
+        <p class="city-desc">粤东明珠，潮汕文化发源地。小公园骑楼、南澳岛风光、地道牛肉火锅，体验独特的潮汕风情。</p>
+        <div class="city-routes">
+          <span class="route-tag">古城寻踪</span>
+          <span class="route-tag">海岛逐浪</span>
+          <span class="route-tag">美食探索</span>
+        </div>
+        <div class="city-card-footer">
+          <button class="btn btn-secondary" disabled style="opacity:0.6">敬请期待</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- 占位：更多城市 -->
+    <div class="city-card">
+      <div class="city-card-header" style="background: linear-gradient(135deg, #7a5c8a 0%, #9a7caa 100%);">
+        <span class="city-icon">✨</span>
+      </div>
+      <div class="city-card-body">
+        <h3 class="city-name">更多城市</h3>
+        <p class="city-desc">我们正在筹备更多城市的 CityWalk 路线。如果你有想探索的城市，欢迎提出建议！</p>
+        <div class="city-routes">
+          <span class="route-tag">揭阳</span>
+          <span class="route-tag">潮州</span>
+          <span class="route-tag">泉州</span>
+          <span class="route-tag">...</span>
+        </div>
+        <div class="city-card-footer">
+          <a href="https://github.com/zljie/citywalk-planner-skill/issues" class="btn btn-secondary" target="_blank">💡 提出建议</a>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="about-section">
+    <h2>🎯 关于 CityWalk Planner</h2>
+    <p>CityWalk Planner 是一个专为城市漫步爱好者设计的路线规划工具。我们精心策划每一条路线，让你用最舒适的方式探索城市的每一个角落。</p>
+    <p>无论是历史文化、美食探索、自然风光还是城市夜景，我们都有对应的主题路线供你选择。</p>
+    
+    <div class="feature-list">
+      <div class="feature-item">
+        <span class="feature-icon">🗺️</span>
+        <span class="feature-text">交互式地图<br>直观查看路线</span>
+      </div>
+      <div class="feature-item">
+        <span class="feature-icon">📍</span>
+        <span class="feature-text">精准定位<br>景点坐标标注</span>
+      </div>
+      <div class="feature-item">
+        <span class="feature-icon">⏱️</span>
+        <span class="feature-text">时长建议<br>合理安排行程</span>
+      </div>
+      <div class="feature-item">
+        <span class="feature-icon">🍜</span>
+        <span class="feature-text">美食推荐<br>地道风味指南</span>
+      </div>
+    </div>
+  </div>
+</main>
+
+<footer>
+  <p>Made with ❤️ for CityWalk lovers</p>
+  <p style="margin-top:8px">
+    <a href="https://github.com/zljie/citywalk-planner-skill" target="_blank">GitHub</a> · 
+    <a href="https://github.com/zljie/citywalk-planner-skill#readme" target="_blank">Documentation</a>
+  </p>
+</footer>
+
+</body>
+</html>
