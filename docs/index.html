@@ -99,6 +99,18 @@ main {
   background: linear-gradient(135deg, var(--sea) 0%, #3d7a8c 100%);
 }
 
+.city-card-header.green {
+  background: linear-gradient(135deg, #4a7c59 0%, #6b9c7b 100%);
+}
+
+.city-card-header.purple {
+  background: linear-gradient(135deg, #6b4c6b 0%, #8b6c8b 100%);
+}
+
+.city-card-header.blue {
+  background: linear-gradient(135deg, #2a5c8a 0%, #4a7caa 100%);
+}
+
 .city-icon {
   font-size: 64px;
   opacity: 0.9;
@@ -294,22 +306,90 @@ footer a:hover {
       </div>
     </div>
 
-    <!-- 占位：汕头 -->
+    <!-- 上海 -->
+    <div class="city-card">
+      <div class="city-card-header blue">
+        <span class="city-icon">🌃</span>
+        <span class="city-badge">NEW</span>
+      </div>
+      <div class="city-card-body">
+        <h3 class="city-name">上海</h3>
+        <p class="city-desc">东方巴黎，魔都风华。外滩万国建筑、法租界梧桐、陆家嘴天际线，感受百年魔都的独特魅力。</p>
+        <div class="city-routes">
+          <span class="route-tag">外滩经典</span>
+          <span class="route-tag">法租界</span>
+          <span class="route-tag">老城厢</span>
+          <span class="route-tag">陆家嘴</span>
+        </div>
+        <div class="city-card-footer">
+          <a href="shanghai-citywalk.html" class="btn btn-primary">🗺️ 查看地图</a>
+          <a href="shanghai-citywalk.html" class="btn btn-secondary">📋 路线详情</a>
+        </div>
+      </div>
+    </div>
+
+    <!-- 汕头 -->
     <div class="city-card">
       <div class="city-card-header sea">
         <span class="city-icon">🌊</span>
-        <span class="city-badge">即将上线</span>
+        <span class="city-badge">NEW</span>
       </div>
       <div class="city-card-body">
         <h3 class="city-name">汕头</h3>
-        <p class="city-desc">粤东明珠，潮汕文化发源地。小公园骑楼、南澳岛风光、地道牛肉火锅，体验独特的潮汕风情。</p>
+        <p class="city-desc">百载商埠，潮汕文化核心。小公园骑楼、南澳岛风光、地道牛肉火锅，体验独特的潮汕风情。</p>
         <div class="city-routes">
-          <span class="route-tag">古城寻踪</span>
-          <span class="route-tag">海岛逐浪</span>
-          <span class="route-tag">美食探索</span>
+          <span class="route-tag">小公园老城</span>
+          <span class="route-tag">开埠文化</span>
+          <span class="route-tag">海滨风光</span>
+          <span class="route-tag">潮汕美食</span>
         </div>
         <div class="city-card-footer">
-          <button class="btn btn-secondary" disabled style="opacity:0.6">敬请期待</button>
+          <a href="shantou-citywalk.html" class="btn btn-primary">🗺️ 查看地图</a>
+          <a href="shantou-citywalk.html" class="btn btn-secondary">📋 路线详情</a>
+        </div>
+      </div>
+    </div>
+
+    <!-- 揭阳 -->
+    <div class="city-card">
+      <div class="city-card-header purple">
+        <span class="city-icon">🏮</span>
+        <span class="city-badge">NEW</span>
+      </div>
+      <div class="city-card-body">
+        <h3 class="city-name">揭阳</h3>
+        <p class="city-desc">岭南水城，八百年古城。进贤门、揭阳学宫、城隍庙，探索潮汕文化的发源地。</p>
+        <div class="city-routes">
+          <span class="route-tag">古城文化</span>
+          <span class="route-tag">宗教古迹</span>
+          <span class="route-tag">美食探索</span>
+          <span class="route-tag">山水风光</span>
+        </div>
+        <div class="city-card-footer">
+          <a href="jieyang-citywalk.html" class="btn btn-primary">🗺️ 查看地图</a>
+          <a href="jieyang-citywalk.html" class="btn btn-secondary">📋 路线详情</a>
+        </div>
+      </div>
+    </div>
+
+    <!-- 大理 -->
+    <div class="city-card">
+      <div class="city-card-header green">
+        <span class="city-icon">🌸</span>
+        <span class="city-badge">NEW</span>
+      </div>
+      <div class="city-card-body">
+        <h3 class="city-name">大理</h3>
+        <p class="city-desc">风花雪月，文献名邦。苍山洱海、大理古城、白族风情，寻找诗和远方的理想之地。</p>
+        <div class="city-routes">
+          <span class="route-tag">古城漫步</span>
+          <span class="route-tag">洱海环湖</span>
+          <span class="route-tag">苍山探秘</span>
+          <span class="route-tag">双廊慢生活</span>
+        </div>
+        <div class="city-card-footer">
+          <a href="dali-citywalk.html" class="btn btn-primary">🗺️ 查看地图</a>
+          <a href="dali-citywalk.html" class="btn btn-secondary">📋 路线详情</a>
         </div>
       </div>
     </div>
@@ -323,9 +403,9 @@ footer a:hover {
         <h3 class="city-name">更多城市</h3>
         <p class="city-desc">我们正在筹备更多城市的 CityWalk 路线。如果你有想探索的城市，欢迎提出建议！</p>
         <div class="city-routes">
-          <span class="route-tag">揭阳</span>
           <span class="route-tag">潮州</span>
           <span class="route-tag">泉州</span>
+          <span class="route-tag">成都</span>
           <span class="route-tag">...</span>
         </div>
         <div class="city-card-footer">

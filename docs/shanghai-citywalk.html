@@ -1,0 +1,1238 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>上海 CityWalk 路线地图 | Shanghai CityWalk Guide</title>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=Ma+Shan+Zheng&family=Noto+Serif+SC:wght@300;400;600;700&family=Noto+Sans+SC:wght@300;400;500;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --ink: #1a1410;
+  --warm-dark: #3d2b1f;
+  --terracotta: #2a5c8a;
+  --amber: #c9a227;
+  --sand: #f0f4f8;
+  --cream: #fafbfc;
+  --sea: #1e3a5f;
+  --muted: #5a6a7a;
+  --border: #d0d8e0;
+  --route1: #2a5c8a;
+  --route2: #c9a227;
+  --route3: #8b4513;
+  --route4: #6b8e6b;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  font-family: 'Noto Sans SC', sans-serif;
+  background: var(--cream);
+  color: var(--ink);
+  height: 100vh;
+  overflow: hidden;
+}
+
+/* ── 顶部导航 ── */
+.topbar {
+  position: fixed;
+  top: 0; left: 0; right: 0;
+  height: 56px;
+  background: rgba(250,251,252,0.96);
+  backdrop-filter: blur(8px);
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  padding: 0 20px;
+  z-index: 1000;
+  gap: 10px;
+}
+
+.topbar-title {
+  font-family: 'Ma Shan Zheng', cursive;
+  font-size: 20px;
+  color: var(--terracotta);
+  margin-right: 12px;
+  white-space: nowrap;
+}
+
+.route-tabs {
+  display: flex;
+  gap: 6px;
+  overflow-x: auto;
+  scrollbar-width: none;
+  flex: 1;
+}
+.route-tabs::-webkit-scrollbar { display: none; }
+
+.route-tab {
+  padding: 5px 14px;
+  border-radius: 20px;
+  border: 1.5px solid var(--border);
+  font-size: 13px;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: all 0.2s;
+  background: white;
+  color: var(--muted);
+}
+.route-tab:hover { border-color: var(--terracotta); color: var(--terracotta); }
+.route-tab.active {
+  color: white;
+  border-color: transparent;
+}
+
+/* ── 主体布局 ── */
+.main {
+  display: flex;
+  height: 100vh;
+  padding-top: 56px;
+}
+
+/* ── 地图 ── */
+#map-container {
+  flex: 1;
+  height: 100%;
+  background: #e8e4de;
+}
+
+/* ── 侧边面板 ── */
+.sidebar {
+  width: 380px;
+  height: 100%;
+  overflow-y: auto;
+  background: var(--cream);
+  border-left: 1px solid var(--border);
+  scrollbar-width: thin;
+  scrollbar-color: var(--border) transparent;
+}
+.sidebar::-webkit-scrollbar { width: 4px; }
+.sidebar::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+
+/* ── 城市介绍 ── */
+.city-intro {
+  padding: 20px 20px 16px;
+  border-bottom: 1px solid var(--border);
+}
+.city-name {
+  font-family: 'Ma Shan Zheng', cursive;
+  font-size: 32px;
+  color: var(--terracotta);
+}
+.city-sub {
+  font-size: 13px;
+  color: var(--muted);
+  margin-top: 4px;
+  line-height: 1.6;
+}
+.city-tags {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+  margin-top: 10px;
+}
+.city-tag {
+  padding: 3px 10px;
+  border-radius: 12px;
+  font-size: 11px;
+  background: var(--sand);
+  color: var(--warm-dark);
+  border: 1px solid var(--border);
+}
+
+/* ── 路线区块 ── */
+.route-section {
+  border-bottom: 1px solid var(--border);
+}
+
+.route-header {
+  padding: 14px 20px 10px;
+  cursor: pointer;
+  user-select: none;
+}
+.route-label {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.route-dot {
+  width: 12px; height: 12px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+.route-title {
+  font-family: 'Noto Serif SC', serif;
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--warm-dark);
+}
+.route-meta {
+  font-size: 12px;
+  color: var(--muted);
+  margin-top: 4px;
+  padding-left: 22px;
+}
+
+/* ── 站点列表 ── */
+.stations {
+  padding: 0 20px 14px;
+}
+
+.station-item {
+  display: flex;
+  gap: 12px;
+  padding: 10px 0;
+  cursor: pointer;
+  border-radius: 8px;
+  transition: background 0.15s;
+  padding-left: 6px;
+  padding-right: 6px;
+}
+.station-item:hover { background: var(--sand); }
+.station-item.highlighted { background: var(--sand); }
+
+.station-num {
+  width: 26px; height: 26px;
+  border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 12px;
+  font-weight: 700;
+  color: white;
+  flex-shrink: 0;
+  margin-top: 1px;
+}
+.station-info { flex: 1; }
+.station-name {
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--warm-dark);
+}
+.station-note {
+  font-size: 12px;
+  color: var(--muted);
+  margin-top: 3px;
+  line-height: 1.5;
+}
+.station-duration {
+  font-size: 11px;
+  color: var(--terracotta);
+  margin-top: 3px;
+  font-weight: 500;
+}
+
+/* ── 美食速查 ── */
+.food-section {
+  padding: 16px 20px;
+  border-bottom: 1px solid var(--border);
+}
+.food-title {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--warm-dark);
+  margin-bottom: 10px;
+}
+.food-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+.food-item {
+  padding: 8px 10px;
+  background: var(--sand);
+  border-radius: 8px;
+  font-size: 12px;
+}
+.food-name {
+  font-weight: 500;
+  color: var(--warm-dark);
+}
+.food-loc {
+  font-size: 11px;
+  color: var(--muted);
+  margin-top: 2px;
+}
+
+/* ── 交通贴士 ── */
+.tips-section {
+  padding: 16px 20px 20px;
+}
+.tips-title {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--warm-dark);
+  margin-bottom: 8px;
+}
+.tip-item {
+  font-size: 12px;
+  color: var(--muted);
+  line-height: 1.7;
+  padding-left: 12px;
+  position: relative;
+}
+.tip-item::before {
+  content: '•';
+  position: absolute;
+  left: 0;
+  color: var(--amber);
+}
+
+/* ── Leaflet 自定义样式 ── */
+.leaflet-popup-content-wrapper {
+  border-radius: 12px;
+  padding: 0;
+  overflow: hidden;
+}
+.leaflet-popup-content {
+  margin: 0;
+  padding: 14px 16px;
+  font-family: 'Noto Sans SC', sans-serif;
+  min-width: 200px;
+}
+.custom-pin {
+  background: transparent;
+  border: none;
+}
+.pin-inner {
+  width: 32px;
+  height: 40px;
+  position: relative;
+}
+.pin-shape {
+  width: 32px;
+  height: 32px;
+  border-radius: 50% 50% 50% 0;
+  transform: rotate(-45deg);
+  position: absolute;
+  top: 0;
+  left: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.3);
+}
+.pin-shape::after {
+  content: '';
+  width: 16px;
+  height: 16px;
+  background: white;
+  border-radius: 50%;
+  transform: rotate(45deg);
+}
+.pin-number {
+  position: absolute;
+  top: 6px;
+  left: 0;
+  width: 32px;
+  text-align: center;
+  font-size: 12px;
+  font-weight: 700;
+  color: white;
+  z-index: 10;
+}
+
+/* ── 城市信息模块 ── */
+.city-info-section {
+  padding: 20px;
+  border-bottom: 1px solid var(--border);
+}
+
+.info-tabs {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 16px;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+.info-tabs::-webkit-scrollbar { display: none; }
+
+.info-tab {
+  padding: 6px 14px;
+  border-radius: 16px;
+  border: 1px solid var(--border);
+  font-size: 12px;
+  cursor: pointer;
+  white-space: nowrap;
+  background: white;
+  color: var(--muted);
+  transition: all 0.2s;
+}
+.info-tab:hover { border-color: var(--terracotta); color: var(--terracotta); }
+.info-tab.active {
+  background: var(--terracotta);
+  color: white;
+  border-color: var(--terracotta);
+}
+
+.info-content {
+  display: none;
+}
+.info-content.active {
+  display: block;
+  animation: fadeIn 0.3s ease;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.info-card {
+  background: white;
+  border-radius: 12px;
+  padding: 16px;
+  border: 1px solid var(--border);
+  margin-bottom: 12px;
+}
+
+.info-card h4 {
+  font-family: 'Noto Serif SC', serif;
+  font-size: 14px;
+  color: var(--warm-dark);
+  margin-bottom: 10px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.info-card p {
+  font-size: 13px;
+  color: var(--muted);
+  line-height: 1.8;
+}
+
+.info-card ul {
+  font-size: 13px;
+  color: var(--muted);
+  line-height: 1.8;
+  padding-left: 16px;
+}
+
+.info-card li {
+  margin-bottom: 6px;
+}
+
+.highlight-box {
+  background: linear-gradient(135deg, var(--sand) 0%, #e8eef4 100%);
+  border-left: 3px solid var(--terracotta);
+  padding: 12px 16px;
+  border-radius: 0 8px 8px 0;
+  margin: 12px 0;
+}
+
+.highlight-box p {
+  font-size: 12px;
+  color: var(--warm-dark);
+  line-height: 1.7;
+}
+
+.story-grid {
+  display: grid;
+  gap: 12px;
+}
+
+.story-card {
+  background: white;
+  border-radius: 12px;
+  padding: 16px;
+  border: 1px solid var(--border);
+}
+
+.story-card h5 {
+  font-size: 13px;
+  color: var(--terracotta);
+  margin-bottom: 8px;
+  font-weight: 600;
+}
+
+.story-card p {
+  font-size: 12px;
+  color: var(--muted);
+  line-height: 1.7;
+}
+
+.landmark-list {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+
+.landmark-item {
+  background: var(--sand);
+  padding: 10px 12px;
+  border-radius: 8px;
+  font-size: 12px;
+}
+
+.landmark-item strong {
+  color: var(--warm-dark);
+  display: block;
+  margin-bottom: 2px;
+}
+
+.landmark-item span {
+  color: var(--muted);
+  font-size: 11px;
+}
+
+/* ── 响应式 ── */
+@media (max-width: 768px) {
+  .main { flex-direction: column; }
+  #map-container { height: 50vh; }
+  .sidebar { width: 100%; height: 50vh; border-left: none; border-top: 1px solid var(--border); }
+  .topbar-title { font-size: 16px; }
+  .food-grid { grid-template-columns: 1fr; }
+  .landmark-list { grid-template-columns: 1fr; }
+}
+
+/* ── GitHub Pages 链接 ── */
+.github-link {
+  position: fixed;
+  bottom: 20px;
+  right: 20px;
+  background: white;
+  padding: 10px 16px;
+  border-radius: 24px;
+  box-shadow: 0 2px 12px rgba(0,0,0,0.15);
+  font-size: 12px;
+  color: var(--warm-dark);
+  text-decoration: none;
+  z-index: 1001;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  border: 1px solid var(--border);
+}
+.github-link:hover {
+  background: var(--sand);
+}
+</style>
+</head>
+
+<body>
+<!-- ── 顶部导航 ── -->
+<div class="topbar">
+  <div class="topbar-title">🚶 上海 CityWalk</div>
+  <div class="route-tabs" id="routeTabs">
+    <div class="route-tab active" data-route="r1" style="background:var(--route1)">① 外滩经典</div>
+    <div class="route-tab" data-route="r2">② 法租界</div>
+    <div class="route-tab" data-route="r3">③ 老城厢</div>
+    <div class="route-tab" data-route="r4">④ 陆家嘴</div>
+  </div>
+</div>
+
+<!-- ── 主体 ── -->
+<div class="main">
+  <div id="map-container"></div>
+  
+  <div class="sidebar" id="sidebar">
+    <!-- 城市介绍 -->
+    <div class="city-intro">
+      <div class="city-name">上海</div>
+      <div class="city-sub">东方巴黎 · 魔都 · 海派文化发源地<br>「十里洋场烟花地，风云际会上海滩」</div>
+      <div class="city-tags">
+        <span class="city-tag">🏛️ 外滩</span>
+        <span class="city-tag">🌃 陆家嘴</span>
+        <span class="city-tag">🏘️ 石库门</span>
+        <span class="city-tag">🍜 生煎包</span>
+        <span class="city-tag">☕ 武康路</span>
+        <span class="city-tag">🎭 豫园</span>
+      </div>
+    </div>
+
+    <!-- 城市详细信息 -->
+    <div class="city-info-section">
+      <div class="info-tabs">
+        <div class="info-tab active" onclick="switchInfoTab(this, 'history')">📜 人文历史</div>
+        <div class="info-tab" onclick="switchInfoTab(this, 'admin')">🏛️ 行政划分</div>
+        <div class="info-tab" onclick="switchInfoTab(this, 'landmarks')">🏯 名胜古迹</div>
+        <div class="info-tab" onclick="switchInfoTab(this, 'stories')">🌟 都市故事</div>
+      </div>
+
+      <!-- 人文历史 -->
+      <div class="info-content active" id="info-history">
+        <div class="info-card">
+          <h4>🕰️ 百年魔都</h4>
+          <p>上海，简称「沪」或「申」，是中国最大的城市之一。1843年开埠后，上海迅速崛起为远东第一大都市，被誉为「东方巴黎」。百年沧桑，外滩的万国建筑群见证了这座城市的繁华与变迁。</p>
+          <div class="highlight-box">
+            <p><strong>海派文化</strong>：上海文化融合了江南传统与西方现代，形成独特的「海派」风格。石库门里弄、Art Deco建筑、旗袍、爵士乐，都是海派文化的符号。</p>
+          </div>
+        </div>
+        <div class="info-card">
+          <h4>🏘️ 石库门记忆</h4>
+          <p>石库门是上海最有代表性的民居建筑，起源于19世纪70年代。中西合璧的建筑风格，见证了上海从传统走向现代的历程。新天地、田子坊等石库门街区，如今成为时尚与怀旧交织的文化地标。</p>
+        </div>
+        <div class="info-card">
+          <h4>🎭 十里洋场</h4>
+          <p>20世纪初，上海成为亚洲最繁华的都市。外滩的银行、南京路的百货、霞飞路的咖啡馆，构成了「十里洋场」的繁华图景。老上海的电影、爵士乐、旗袍文化，至今仍令人神往。</p>
+        </div>
+        <div class="info-card">
+          <h4>🚀 改革开放先锋</h4>
+          <p>1990年浦东开发开放，陆家嘴从一片农田崛起为世界级金融中心。东方明珠、上海中心、环球金融中心，构成了震撼人心的天际线。上海成为中国改革开放的象征。</p>
+        </div>
+      </div>
+
+      <!-- 行政划分 -->
+      <div class="info-content" id="info-admin">
+        <div class="info-card">
+          <h4>📍 行政区划</h4>
+          <p>上海市是直辖市，下辖16个区：</p>
+          <ul style="margin-top:10px">
+            <li><strong>黄浦区</strong>：外滩、南京路、豫园所在地，上海的核心</li>
+            <li><strong>静安区</strong>：静安寺、南京西路商圈，高端商务区</li>
+            <li><strong>徐汇区</strong>：武康路、徐家汇，法租界历史风貌区</li>
+            <li><strong>长宁区</strong>：中山公园、虹桥，国际化社区</li>
+            <li><strong>浦东新区</strong>：陆家嘴、东方明珠，金融中心</li>
+            <li><strong>虹口区</strong>：鲁迅故居、北外滩，历史文化区</li>
+            <li><strong>杨浦区</strong>：五角场、同济大学，科创高地</li>
+            <li><strong>普陀区</strong>：真如、长风，转型发展区</li>
+          </ul>
+        </div>
+        <div class="info-card">
+          <h4>🌆 城市格局</h4>
+          <p>上海呈现「一江两岸」的独特格局：</p>
+          <div class="highlight-box">
+            <p><strong>浦西</strong>：历史风貌区，外滩、法租界、老城厢，承载百年记忆。<strong>浦东</strong>：现代都市区，陆家嘴摩天大楼群，展现中国速度。</p>
+          </div>
+        </div>
+        <div class="info-card">
+          <h4>📊 基本数据</h4>
+          <ul>
+            <li>总面积：6,340 平方公里</li>
+            <li>常住人口：约 2,487 万（2023年）</li>
+            <li>GDP：约 4.72 万亿元（2023年）</li>
+            <li>气候：亚热带季风气候，四季分明</li>
+            <li>市花：白玉兰 | 市树：梧桐树</li>
+          </ul>
+        </div>
+      </div>
+
+      <!-- 名胜古迹 -->
+      <div class="info-content" id="info-landmarks">
+        <div class="info-card">
+          <h4>🏛️ 必游古迹</h4>
+          <div class="landmark-list">
+            <div class="landmark-item">
+              <strong>外滩</strong>
+              <span>万国建筑博览群</span>
+            </div>
+            <div class="landmark-item">
+              <strong>豫园</strong>
+              <span>明代江南园林</span>
+            </div>
+            <div class="landmark-item">
+              <strong>静安寺</strong>
+              <span>千年古刹</span>
+            </div>
+            <div class="landmark-item">
+              <strong>城隍庙</strong>
+              <span>道教宫观</span>
+            </div>
+            <div class="landmark-item">
+              <strong>武康大楼</strong>
+              <span>邬达克经典</span>
+            </div>
+            <div class="landmark-item">
+              <strong>新天地</strong>
+              <span>石库门改造典范</span>
+            </div>
+            <div class="landmark-item">
+              <strong>田子坊</strong>
+              <span>艺术创意园区</span>
+            </div>
+            <div class="landmark-item">
+              <strong>思南公馆</strong>
+              <span>花园洋房群</span>
+            </div>
+          </div>
+        </div>
+        <div class="info-card">
+          <h4>🏺 博物馆藏</h4>
+          <ul>
+            <li><strong>上海博物馆</strong>：中国古代艺术珍品，青铜器、陶瓷、书画</li>
+            <li><strong>中华艺术宫</strong>：原世博会中国馆，当代艺术殿堂</li>
+            <li><strong>上海历史博物馆</strong>：展示上海6000年历史变迁</li>
+            <li><strong>犹太难民纪念馆</strong>：二战时期犹太难民在上海的历史</li>
+          </ul>
+        </div>
+        <div class="info-card">
+          <h4>🌳 城市地标</h4>
+          <ul>
+            <li><strong>东方明珠</strong>：468米高，上海标志性建筑</li>
+            <li><strong>上海中心大厦</strong>：632米，中国第一高楼</li>
+            <li><strong>环球金融中心</strong>：492米，开瓶器造型</li>
+            <li><strong>金茂大厦</strong>：420.5米，宝塔造型</li>
+          </ul>
+        </div>
+      </div>
+
+      <!-- 都市故事 -->
+      <div class="info-content" id="info-stories">
+        <div class="story-grid">
+          <div class="story-card">
+            <h5>🥟 生煎包的传奇</h5>
+            <p>1920年代，上海街头出现了一种新式点心——生煎包。底部金黄酥脆，肉馅鲜美多汁，撒上芝麻和葱花，成为上海人最爱的早餐。大壶春、东泰祥、小杨生煎，各家有各家的秘方。</p>
+          </div>
+          <div class="story-card">
+            <h5>☕ 咖啡文化的百年</h5>
+            <p>上海是中国咖啡文化的发源地。19世纪末，第一家咖啡馆在外滩开业。如今上海拥有超过8000家咖啡馆，是全球咖啡馆最多的城市。武康路、安福路的精品咖啡馆，成为文艺青年的聚集地。</p>
+          </div>
+          <div class="story-card">
+            <h5>🎬 电影之都的辉煌</h5>
+            <p>上海是中国电影的发源地。1896年，中国第一场电影放映在上海举行。1930年代，上海电影业达到巅峰，阮玲玉、周璇等明星闪耀银幕。今天的上海电影节，是亚洲最重要的电影盛会之一。</p>
+          </div>
+          <div class="story-card">
+            <h5>👗 旗袍的风华</h5>
+            <p>旗袍起源于满族服饰，在20世纪20年代的上海演变成为时尚符号。宋氏三姐妹、胡蝶、阮玲玉，都以旗袍展现东方女性的优雅。今天的上海，旗袍仍是重要的文化符号。</p>
+          </div>
+          <div class="story-card">
+            <h5>🏗️ 浦东的奇迹</h5>
+            <p>1990年，浦东还是一片农田。30年间，陆家嘴从平地崛起为世界级金融中心。东方明珠、金茂大厦、环球金融中心、上海中心，四座地标见证了「中国速度」。</p>
+          </div>
+          <div class="story-card">
+            <h5>🌉 外滩的变迁</h5>
+            <p>外滩的26栋历史建筑，见证了上海从渔村到国际大都市的变迁。汇丰银行大楼、海关大楼、和平饭店，每一栋都有自己的故事。夜晚的外滩灯光秀，是游客必看的盛景。</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 路线 1：外滩经典 -->
+    <div class="route-section" id="section-r1">
+      <div class="route-header" onclick="toggleRoute('r1')">
+        <div class="route-label">
+          <div class="route-dot" style="background:var(--route1)"></div>
+          <div class="route-title">① 外滩经典线</div>
+        </div>
+        <div class="route-meta">全程约 3km · 步行为主 · 建议 4小时</div>
+      </div>
+      <div class="stations" id="stations-r1">
+        <div class="station-item" onclick="focusStation('r1',0)">
+          <div class="station-num" style="background:var(--route1)">1</div>
+          <div class="station-info">
+            <div class="station-name">外滩观景平台</div>
+            <div class="station-note">万国建筑博览群，黄浦江对岸陆家嘴天际线，上海最经典视角</div>
+            <div class="station-duration">⏱ 建议 1小时 · 免费</div>
+          </div>
+        </div>
+        <div class="station-item" onclick="focusStation('r1',1)">
+          <div class="station-num" style="background:var(--route1)">2</div>
+          <div class="station-info">
+            <div class="station-name">南京路步行街</div>
+            <div class="station-note">中华商业第一街，百年老店与时尚品牌并存，和平饭店所在地</div>
+            <div class="station-duration">⏱ 建议 1.5小时 · 免费逛街</div>
+          </div>
+        </div>
+        <div class="station-item" onclick="focusStation('r1',2)">
+          <div class="station-num" style="background:var(--route1)">3</div>
+          <div class="station-info">
+            <div class="station-name">豫园 & 城隍庙</div>
+            <div class="station-note">明代江南园林，九曲桥、湖心亭，品尝南翔小笼包</div>
+            <div class="station-duration">⏱ 建议 2小时 · 豫园¥40</div>
+          </div>
+        </div>
+        <div class="station-item" onclick="focusStation('r1',3)">
+          <div class="station-num" style="background:var(--route1)">4</div>
+          <div class="station-info">
+            <div class="station-name">十六铺码头</div>
+            <div class="station-note">夜游黄浦江最佳登船点，欣赏两岸璀璨夜景</div>
+            <div class="station-duration">⏱ 建议 1小时 · 游船¥80起</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 路线 2：法租界 -->
+    <div class="route-section" id="section-r2">
+      <div class="route-header" onclick="toggleRoute('r2')">
+        <div class="route-label">
+          <div class="route-dot" style="background:var(--route2)"></div>
+          <div class="route-title">② 法租界漫步</div>
+        </div>
+        <div class="route-meta">全程约 4km · 纯步行 · 建议 5小时</div>
+      </div>
+      <div class="stations" id="stations-r2" style="display:none">
+        <div class="station-item" onclick="focusStation('r2',0)">
+          <div class="station-num" style="background:var(--route2)">1</div>
+          <div class="station-info">
+            <div class="station-name">武康大楼</div>
+            <div class="station-note">邬达克设计的经典作品，上海最著名的街角建筑，网红打卡地</div>
+            <div class="station-duration">⏱ 建议 30分钟 · 免费</div>
+          </div>
+        </div>
+        <div class="station-item" onclick="focusStation('r2',1)">
+          <div class="station-num" style="background:var(--route2)">2</div>
+          <div class="station-info">
+            <div class="station-name">武康路</div>
+            <div class="station-note">梧桐树荫下的历史名街，巴金故居、宋庆龄故居，文艺咖啡馆林立</div>
+            <div class="station-duration">⏱ 建议 1.5小时 · 免费</div>
+          </div>
+        </div>
+        <div class="station-item" onclick="focusStation('r2',2)">
+          <div class="station-num" style="background:var(--route2)">3</div>
+          <div class="station-info">
+            <div class="station-name">安福路</div>
+            <div class="station-note">上海最文艺的街道，话剧中心、独立书店、精品咖啡、买手店</div>
+            <div class="station-duration">⏱ 建议 1小时 · 免费</div>
+          </div>
+        </div>
+        <div class="station-item" onclick="focusStation('r2',3)">
+          <div class="station-num" style="background:var(--route2)">4</div>
+          <div class="station-info">
+            <div class="station-name">思南公馆</div>
+            <div class="station-note">花园洋房群，周恩来故居、梅兰芳故居，高端餐饮聚集地</div>
+            <div class="station-duration">⏱ 建议 1小时 · 免费参观</div>
+          </div>
+        </div>
+        <div class="station-item" onclick="focusStation('r2',4)">
+          <div class="station-num" style="background:var(--route2)">5</div>
+          <div class="station-info">
+            <div class="station-name">田子坊</div>
+            <div class="station-note">石库门改造的创意园区，艺术工作室、特色小店、各国美食</div>
+            <div class="station-duration">⏱ 建议 1.5小时 · 免费</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 路线 3：老城厢 -->
+    <div class="route-section" id="section-r3">
+      <div class="route-header" onclick="toggleRoute('r3')">
+        <div class="route-label">
+          <div class="route-dot" style="background:var(--route3)"></div>
+          <div class="route-title">③ 老城厢寻踪</div>
+        </div>
+        <div class="route-meta">全程约 2.5km · 纯步行 · 建议 3小时</div>
+      </div>
+      <div class="stations" id="stations-r3" style="display:none">
+        <div class="station-item" onclick="focusStation('r3',0)">
+          <div class="station-num" style="background:var(--route3)">1</div>
+          <div class="station-info">
+            <div class="station-name">新天地</div>
+            <div class="station-note">石库门改造的国际时尚区，中共一大会址，高端餐饮酒吧</div>
+            <div class="station-duration">⏱ 建议 1.5小时 · 免费</div>
+          </div>
+        </div>
+        <div class="station-item" onclick="focusStation('r3',1)">
+          <div class="station-num" style="background:var(--route3)">2</div>
+          <div class="station-info">
+            <div class="station-name">淮海中路</div>
+            <div class="station-note">东方香榭丽舍，百年商业街，老字号与潮牌并存</div>
+            <div class="station-duration">⏱ 建议 1小时 · 免费逛街</div>
+          </div>
+        </div>
+        <div class="station-item" onclick="focusStation('r3',2)">
+          <div class="station-num" style="background:var(--route3)">3</div>
+          <div class="station-info">
+            <div class="station-name">静安寺</div>
+            <div class="station-note">千年古刹，金碧辉煌的佛教寺院，闹市中的净土</div>
+            <div class="station-duration">⏱ 建议 1小时 · 门票¥50</div>
+          </div>
+        </div>
+        <div class="station-item" onclick="focusStation('r3',3)">
+          <div class="station-num" style="background:var(--route3)">4</div>
+          <div class="station-info">
+            <div class="station-name">张园</div>
+            <div class="station-note">上海最大的石库门建筑群，百年历史，近期修缮开放</div>
+            <div class="station-duration">⏱ 建议 1小时 · 免费</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 路线 4：陆家嘴 -->
+    <div class="route-section" id="section-r4">
+      <div class="route-header" onclick="toggleRoute('r4')">
+        <div class="route-label">
+          <div class="route-dot" style="background:var(--route4)"></div>
+          <div class="route-title">④ 陆家嘴天际线</div>
+        </div>
+        <div class="route-meta">全程约 2km · 步行为主 · 建议 3小时</div>
+      </div>
+      <div class="stations" id="stations-r4" style="display:none">
+        <div class="station-item" onclick="focusStation('r4',0)">
+          <div class="station-num" style="background:var(--route4)">1</div>
+          <div class="station-info">
+            <div class="station-name">东方明珠</div>
+            <div class="station-note">468米高，上海地标，玻璃栈道俯瞰全城，旋转餐厅</div>
+            <div class="station-duration">⏱ 建议 2小时 · 门票¥199起</div>
+          </div>
+        </div>
+        <div class="station-item" onclick="focusStation('r4',1)">
+          <div class="station-num" style="background:var(--route4)">2</div>
+          <div class="station-info">
+            <div class="station-name">上海中心大厦</div>
+            <div class="station-note">632米中国第一高楼，云端观景台，上海之巅</div>
+            <div class="station-duration">⏱ 建议 1.5小时 · 门票¥180</div>
+          </div>
+        </div>
+        <div class="station-item" onclick="focusStation('r4',2)">
+          <div class="station-num" style="background:var(--route4)">3</div>
+          <div class="station-info">
+            <div class="station-name">陆家嘴环形天桥</div>
+            <div class="station-note">最佳摄影点，360度拍摄摩天大楼群，网红打卡地</div>
+            <div class="station-duration">⏱ 建议 30分钟 · 免费</div>
+          </div>
+        </div>
+        <div class="station-item" onclick="focusStation('r4',3)">
+          <div class="station-num" style="background:var(--route4)">4</div>
+          <div class="station-info">
+            <div class="station-name">滨江大道</div>
+            <div class="station-note">浦东滨江步道，对岸外滩全景，夜景绝美</div>
+            <div class="station-duration">⏱ 建议 1小时 · 免费</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 美食速查 -->
+    <div class="food-section">
+      <div class="food-title">🍜 上海必吃美食速查</div>
+      <div class="food-grid">
+        <div class="food-item">
+          <div class="food-name">南翔小笼包</div>
+          <div class="food-loc">📍 豫园、城隍庙</div>
+        </div>
+        <div class="food-item">
+          <div class="food-name">生煎包</div>
+          <div class="food-loc">📍 大壶春、小杨生煎</div>
+        </div>
+        <div class="food-item">
+          <div class="food-name">蟹壳黄</div>
+          <div class="food-loc">📍 王家沙、老大房</div>
+        </div>
+        <div class="food-item">
+          <div class="food-name">排骨年糕</div>
+          <div class="food-loc">📍 鲜得来、小绍兴</div>
+        </div>
+        <div class="food-item">
+          <div class="food-name">本帮菜</div>
+          <div class="food-loc">📍 老正兴、德兴馆</div>
+        </div>
+        <div class="food-item">
+          <div class="food-name">咖啡甜品</div>
+          <div class="food-loc">📍 武康路、安福路</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 交通贴士 -->
+    <div class="tips-section">
+      <div class="tips-title">📌 上海出行贴士</div>
+      <div class="tip-item">地铁非常发达，建议购买一日票或使用交通卡</div>
+      <div class="tip-item">外滩夜景最佳观赏时间：19:00-22:00（灯光秀）</div>
+      <div class="tip-item">上海中心、东方明珠建议提前网上购票，避免排队</div>
+      <div class="tip-item">法租界区域适合骑行或步行，梧桐树荫很惬意</div>
+      <div class="tip-item">豫园商圈人多拥挤，注意保管好随身物品</div>
+      <div class="tip-item">最佳游览季：3-5月（樱花）、9-11月（秋高气爽）</div>
+    </div>
+
+  </div><!-- /sidebar -->
+</div><!-- /main -->
+
+<a href="https://github.com/zljie/citywalk-planner-skill" class="github-link" target="_blank">
+  <svg height="16" viewBox="0 0 16 16" width="16" fill="currentColor">
+    <path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"/>
+  </svg>
+  查看源码
+</a>
+
+<script>
+// ── 上海 CityWalk 路线数据（GCJ-02 坐标）──
+var routeData = {
+  r1: {
+    name: '外滩经典线',
+    color: '#2a5c8a',
+    center: [31.2356, 121.4906],
+    zoom: 14,
+    stations: [
+      { name: '外滩观景平台', lat: 31.2356, lng: 121.4906, note: '万国建筑·黄浦江景' },
+      { name: '南京路步行街', lat: 31.2341, lng: 121.4747, note: '中华商业第一街' },
+      { name: '豫园城隍庙', lat: 31.2272, lng: 121.4921, note: '明代园林·小笼包' },
+      { name: '十六铺码头', lat: 31.2308, lng: 121.4956, note: '夜游黄浦江' }
+    ]
+  },
+  r2: {
+    name: '法租界漫步',
+    color: '#c9a227',
+    center: [31.2106, 121.4547],
+    zoom: 14,
+    stations: [
+      { name: '武康大楼', lat: 31.2106, lng: 121.4447, note: '邬达克经典·网红打卡' },
+      { name: '武康路', lat: 31.2115, lng: 121.4389, note: '梧桐名街·名人故居' },
+      { name: '安福路', lat: 31.2156, lng: 121.4511, note: '文艺街道·精品咖啡' },
+      { name: '思南公馆', lat: 31.2189, lng: 121.4689, note: '花园洋房·历史建筑' },
+      { name: '田子坊', lat: 31.2047, lng: 121.4708, note: '石库门创意园区' }
+    ]
+  },
+  r3: {
+    name: '老城厢寻踪',
+    color: '#8b4513',
+    center: [31.2256, 121.4756],
+    zoom: 14,
+    stations: [
+      { name: '新天地', lat: 31.2239, lng: 121.4756, note: '石库门时尚区' },
+      { name: '淮海中路', lat: 31.2208, lng: 121.4656, note: '东方香榭丽舍' },
+      { name: '静安寺', lat: 31.2233, lng: 121.4467, note: '千年古刹' },
+      { name: '张园', lat: 31.2311, lng: 121.4589, note: '最大石库门群' }
+    ]
+  },
+  r4: {
+    name: '陆家嘴天际线',
+    color: '#6b8e6b',
+    center: [31.2356, 121.5056],
+    zoom: 15,
+    stations: [
+      { name: '东方明珠', lat: 31.2397, lng: 121.4997, note: '468米地标' },
+      { name: '上海中心大厦', lat: 31.2333, lng: 121.5056, note: '632米中国最高' },
+      { name: '陆家嘴环形天桥', lat: 31.2367, lng: 121.5028, note: '最佳摄影点' },
+      { name: '滨江大道', lat: 31.2389, lng: 121.5089, note: '浦东滨江步道' }
+    ]
+  }
+};
+
+var activeRoute = 'r1';
+var map = null;
+var routeLayers = {};
+var markers = {};
+
+// ── GCJ-02 转 WGS-84（用于高德瓦片显示）──
+function gcj02ToWgs84(lat, lng) {
+  var a = 6378245.0;
+  var ee = 0.00669342162296594323;
+  
+  function transformLat(lng, lat) {
+    var ret = -100.0 + 2.0 * lng + 3.0 * lat + 0.2 * lat * lat + 0.1 * lng * lat + 0.2 * Math.sqrt(Math.abs(lng));
+    ret += (20.0 * Math.sin(6.0 * lng * Math.PI) + 20.0 * Math.sin(2.0 * lng * Math.PI)) * 2.0 / 3.0;
+    ret += (20.0 * Math.sin(lat * Math.PI) + 40.0 * Math.sin(lat / 3.0 * Math.PI)) * 2.0 / 3.0;
+    ret += (160.0 * Math.sin(lat / 12.0 * Math.PI) + 320 * Math.sin(lat * Math.PI / 30.0)) * 2.0 / 3.0;
+    return ret;
+  }
+  
+  function transformLng(lng, lat) {
+    var ret = 300.0 + lng + 2.0 * lat + 0.1 * lng * lng + 0.1 * lng * lat + 0.1 * Math.sqrt(Math.abs(lng));
+    ret += (20.0 * Math.sin(6.0 * lng * Math.PI) + 20.0 * Math.sin(2.0 * lng * Math.PI)) * 2.0 / 3.0;
+    ret += (20.0 * Math.sin(lng * Math.PI) + 40.0 * Math.sin(lng / 3.0 * Math.PI)) * 2.0 / 3.0;
+    ret += (150.0 * Math.sin(lng / 12.0 * Math.PI) + 300.0 * Math.sin(lng / 30.0 * Math.PI)) * 2.0 / 3.0;
+    return ret;
+  }
+  
+  var dlat = transformLat(lng - 105.0, lat - 35.0);
+  var dlng = transformLng(lng - 105.0, lat - 35.0);
+  var radlat = lat / 180.0 * Math.PI;
+  var magic = Math.sin(radlat);
+  magic = 1 - ee * magic * magic;
+  var sqrtmagic = Math.sqrt(magic);
+  dlat = (dlat * 180.0) / ((a * (1 - ee)) / (magic * sqrtmagic) * Math.PI);
+  dlng = (dlng * 180.0) / (a / sqrtmagic * Math.cos(radlat) * Math.PI);
+  
+  return [lat - dlat, lng - dlng];
+}
+
+// ── 初始化地图 ──
+function initMap() {
+  var data = routeData[activeRoute];
+  var centerWgs = gcj02ToWgs84(data.center[0], data.center[1]);
+  
+  map = L.map('map-container', {
+    center: centerWgs,
+    zoom: data.zoom,
+    zoomControl: true
+  });
+
+  // 高德瓦片（无需 Key）
+  L.tileLayer('https://webrd0{s}.is.autonavi.com/appmaptile?lang=zh_cn&size=1&scale=1&style=8&x={x}&y={y}&z={z}', {
+    subdomains: '1234',
+    attribution: '&copy; 高德地图'
+  }).addTo(map);
+
+  // 初始化所有路线
+  Object.keys(routeData).forEach(function(key) {
+    buildRouteLayer(key);
+  });
+
+  // 显示默认路线
+  showRoute(activeRoute);
+}
+
+// ── 构建路线图层 ──
+function buildRouteLayer(routeKey) {
+  var rd = routeData[routeKey];
+  var color = rd.color;
+  
+  // 创建标记点
+  var routeMarkers = [];
+  rd.stations.forEach(function(s, i) {
+    var wgs = gcj02ToWgs84(s.lat, s.lng);
+    var icon = createNumberedIcon(i + 1, color);
+    
+    var marker = L.marker(wgs, { icon: icon })
+      .bindPopup('<b style="color:' + color + '">' + s.name + '</b><br>' + s.note);
+    
+    marker.on('click', function() {
+      highlightStation(routeKey, i);
+    });
+    
+    routeMarkers.push(marker);
+  });
+
+  // 创建折线
+  var latlngs = rd.stations.map(function(s) {
+    return gcj02ToWgs84(s.lat, s.lng);
+  });
+  
+  var polyline = L.polyline(latlngs, {
+    color: color,
+    weight: 4,
+    opacity: 0.8,
+    dashArray: null
+  });
+
+  // 创建图层组
+  var layerGroup = L.layerGroup([polyline, ...routeMarkers]);
+  routeLayers[routeKey] = layerGroup;
+  markers[routeKey] = routeMarkers;
+}
+
+// ── 创建编号图标 ──
+function createNumberedIcon(num, color) {
+  var svg = '<svg xmlns="http://www.w3.org/2000/svg" width="32" height="40" viewBox="0 0 32 40">' +
+    '<path d="M16 38C16 38 4 24 4 14C4 7.373 9.373 2 16 2C22.627 2 28 7.373 28 14C28 24 16 38 16 38Z" fill="' + color + '" stroke="white" stroke-width="2"/>' +
+    '<circle cx="16" cy="14" r="6" fill="white"/>' +
+    '<text x="16" y="17" text-anchor="middle" font-size="10" font-weight="bold" fill="' + color + '" font-family="sans-serif">' + num + '</text>' +
+    '</svg>';
+  
+  return L.divIcon({
+    html: svg,
+    className: 'custom-pin',
+    iconSize: [32, 40],
+    iconAnchor: [16, 38],
+    popupAnchor: [0, -36]
+  });
+}
+
+// ── 显示路线 ──
+function showRoute(routeKey) {
+  if (routeLayers[routeKey]) {
+    routeLayers[routeKey].addTo(map);
+  }
+  
+  // 调整地图视野
+  var rd = routeData[routeKey];
+  var bounds = rd.stations.map(function(s) {
+    return gcj02ToWgs84(s.lat, s.lng);
+  });
+  map.fitBounds(bounds, { padding: [50, 50], maxZoom: 15 });
+}
+
+// ── 隐藏路线 ──
+function hideRoute(routeKey) {
+  if (routeLayers[routeKey]) {
+    map.removeLayer(routeLayers[routeKey]);
+  }
+}
+
+// ── 切换路线 ──
+function switchRoute(routeKey) {
+  if (activeRoute === routeKey) return;
+  
+  // 隐藏旧路线
+  hideRoute(activeRoute);
+  
+  // 显示新路线
+  activeRoute = routeKey;
+  showRoute(routeKey);
+  
+  // 更新 Tab 样式
+  var tabs = document.querySelectorAll('.route-tab');
+  tabs.forEach(function(tab) {
+    var isActive = tab.dataset.route === routeKey;
+    tab.classList.toggle('active', isActive);
+    if (isActive) {
+      tab.style.background = routeData[routeKey].color;
+      tab.style.color = 'white';
+    } else {
+      tab.style.background = 'white';
+      tab.style.color = '#5a6a7a';
+    }
+  });
+}
+
+// ── 展开/折叠路线面板 ──
+function toggleRoute(routeKey) {
+  switchRoute(routeKey);
+  
+  // 折叠其他路线，展开当前路线
+  Object.keys(routeData).forEach(function(key) {
+    var el = document.getElementById('stations-' + key);
+    if (el) el.style.display = key === routeKey ? 'block' : 'none';
+  });
+  
+  // 滚动到当前路线
+  var section = document.getElementById('section-' + routeKey);
+  if (section) section.scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+// ── 高亮站点 ──
+function highlightStation(routeKey, index) {
+  switchRoute(routeKey);
+  
+  // 展开对应路线
+  Object.keys(routeData).forEach(function(key) {
+    var el = document.getElementById('stations-' + key);
+    if (el) el.style.display = key === routeKey ? 'block' : 'none';
+  });
+  
+  // 高亮站点行
+  var items = document.querySelectorAll('#stations-' + routeKey + ' .station-item');
+  items.forEach(function(item, i) {
+    item.classList.toggle('highlighted', i === index);
+  });
+  if (items[index]) items[index].scrollIntoView({ behavior: 'smooth', block: 'center' });
+  
+  // 打开对应标记的 popup
+  if (markers[routeKey] && markers[routeKey][index]) {
+    markers[routeKey][index].openPopup();
+  }
+}
+
+// ── 点击站点飞到标记 ──
+function focusStation(routeKey, index) {
+  highlightStation(routeKey, index);
+  
+  var station = routeData[routeKey].stations[index];
+  var wgs = gcj02ToWgs84(station.lat, station.lng);
+  map.setView(wgs, 16);
+}
+
+// ── 顶部 Tab 点击 ──
+document.getElementById('routeTabs').addEventListener('click', function(e) {
+  var tab = e.target.closest('.route-tab');
+  if (tab) toggleRoute(tab.dataset.route);
+});
+
+// ── 信息标签切换 ──
+function switchInfoTab(tabElement, contentId) {
+  // 切换标签样式
+  var tabs = document.querySelectorAll('.info-tab');
+  tabs.forEach(function(tab) {
+    tab.classList.remove('active');
+  });
+  tabElement.classList.add('active');
+  
+  // 切换内容显示
+  var contents = document.querySelectorAll('.info-content');
+  contents.forEach(function(content) {
+    content.classList.remove('active');
+  });
+  document.getElementById('info-' + contentId).classList.add('active');
+}
+
+// ── 启动 ──
+window.addEventListener('load', initMap);
+
+// 初始展开第一条路线的站点
+document.getElementById('stations-r1').style.display = 'block';
+</script>
+</body>
+</html>

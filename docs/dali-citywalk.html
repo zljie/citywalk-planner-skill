@@ -1,0 +1,1155 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>大理 CityWalk 路线地图 | Dali CityWalk Guide</title>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=Ma+Shan+Zheng&family=Noto+Serif+SC:wght@300;400;600;700&family=Noto+Sans+SC:wght@300;400;500;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --ink: #1a1410;
+  --warm-dark: #3d2b1f;
+  --terracotta: #4a7c59;
+  --amber: #d4a574;
+  --sand: #f0f5f0;
+  --cream: #f8faf8;
+  --sea: #2e5a7c;
+  --muted: #6a7a6a;
+  --border: #d0e0d0;
+  --route1: #4a7c59;
+  --route2: #d4a574;
+  --route3: #2e5a7c;
+  --route4: #8b6b4a;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  font-family: 'Noto Sans SC', sans-serif;
+  background: var(--cream);
+  color: var(--ink);
+  height: 100vh;
+  overflow: hidden;
+}
+
+.topbar {
+  position: fixed;
+  top: 0; left: 0; right: 0;
+  height: 56px;
+  background: rgba(248,250,248,0.96);
+  backdrop-filter: blur(8px);
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  padding: 0 20px;
+  z-index: 1000;
+  gap: 10px;
+}
+
+.topbar-title {
+  font-family: 'Ma Shan Zheng', cursive;
+  font-size: 20px;
+  color: var(--terracotta);
+  margin-right: 12px;
+  white-space: nowrap;
+}
+
+.route-tabs {
+  display: flex;
+  gap: 6px;
+  overflow-x: auto;
+  scrollbar-width: none;
+  flex: 1;
+}
+.route-tabs::-webkit-scrollbar { display: none; }
+
+.route-tab {
+  padding: 5px 14px;
+  border-radius: 20px;
+  border: 1.5px solid var(--border);
+  font-size: 13px;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: all 0.2s;
+  background: white;
+  color: var(--muted);
+}
+.route-tab:hover { border-color: var(--terracotta); color: var(--terracotta); }
+.route-tab.active {
+  color: white;
+  border-color: transparent;
+}
+
+.main {
+  display: flex;
+  height: 100vh;
+  padding-top: 56px;
+}
+
+#map-container {
+  flex: 1;
+  height: 100%;
+  background: #e8e4de;
+}
+
+.sidebar {
+  width: 380px;
+  height: 100%;
+  overflow-y: auto;
+  background: var(--cream);
+  border-left: 1px solid var(--border);
+  scrollbar-width: thin;
+  scrollbar-color: var(--border) transparent;
+}
+.sidebar::-webkit-scrollbar { width: 4px; }
+.sidebar::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+
+.city-intro {
+  padding: 20px 20px 16px;
+  border-bottom: 1px solid var(--border);
+}
+.city-name {
+  font-family: 'Ma Shan Zheng', cursive;
+  font-size: 32px;
+  color: var(--terracotta);
+}
+.city-sub {
+  font-size: 13px;
+  color: var(--muted);
+  margin-top: 4px;
+  line-height: 1.6;
+}
+.city-tags {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+  margin-top: 10px;
+}
+.city-tag {
+  padding: 3px 10px;
+  border-radius: 12px;
+  font-size: 11px;
+  background: var(--sand);
+  color: var(--warm-dark);
+  border: 1px solid var(--border);
+}
+
+.route-section {
+  border-bottom: 1px solid var(--border);
+}
+
+.route-header {
+  padding: 14px 20px 10px;
+  cursor: pointer;
+  user-select: none;
+}
+.route-label {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.route-dot {
+  width: 12px; height: 12px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+.route-title {
+  font-family: 'Noto Serif SC', serif;
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--warm-dark);
+}
+.route-meta {
+  font-size: 12px;
+  color: var(--muted);
+  margin-top: 4px;
+  padding-left: 22px;
+}
+
+.stations {
+  padding: 0 20px 14px;
+}
+
+.station-item {
+  display: flex;
+  gap: 12px;
+  padding: 10px 0;
+  cursor: pointer;
+  border-radius: 8px;
+  transition: background 0.15s;
+  padding-left: 6px;
+  padding-right: 6px;
+}
+.station-item:hover { background: var(--sand); }
+.station-item.highlighted { background: var(--sand); }
+
+.station-num {
+  width: 26px; height: 26px;
+  border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 12px;
+  font-weight: 700;
+  color: white;
+  flex-shrink: 0;
+  margin-top: 1px;
+}
+.station-info { flex: 1; }
+.station-name {
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--warm-dark);
+}
+.station-note {
+  font-size: 12px;
+  color: var(--muted);
+  margin-top: 3px;
+  line-height: 1.5;
+}
+.station-duration {
+  font-size: 11px;
+  color: var(--terracotta);
+  margin-top: 3px;
+  font-weight: 500;
+}
+
+.food-section {
+  padding: 16px 20px;
+  border-bottom: 1px solid var(--border);
+}
+.food-title {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--warm-dark);
+  margin-bottom: 10px;
+}
+.food-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+.food-item {
+  padding: 8px 10px;
+  background: var(--sand);
+  border-radius: 8px;
+  font-size: 12px;
+}
+.food-name {
+  font-weight: 500;
+  color: var(--warm-dark);
+}
+.food-loc {
+  font-size: 11px;
+  color: var(--muted);
+  margin-top: 2px;
+}
+
+.tips-section {
+  padding: 16px 20px 20px;
+}
+.tips-title {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--warm-dark);
+  margin-bottom: 8px;
+}
+.tip-item {
+  font-size: 12px;
+  color: var(--muted);
+  line-height: 1.7;
+  padding-left: 12px;
+  position: relative;
+}
+.tip-item::before {
+  content: '•';
+  position: absolute;
+  left: 0;
+  color: var(--amber);
+}
+
+.leaflet-popup-content-wrapper {
+  border-radius: 12px;
+  padding: 0;
+  overflow: hidden;
+}
+.leaflet-popup-content {
+  margin: 0;
+  padding: 14px 16px;
+  font-family: 'Noto Sans SC', sans-serif;
+  min-width: 200px;
+}
+.custom-pin {
+  background: transparent;
+  border: none;
+}
+
+.city-info-section {
+  padding: 20px;
+  border-bottom: 1px solid var(--border);
+}
+
+.info-tabs {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 16px;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+.info-tabs::-webkit-scrollbar { display: none; }
+
+.info-tab {
+  padding: 6px 14px;
+  border-radius: 16px;
+  border: 1px solid var(--border);
+  font-size: 12px;
+  cursor: pointer;
+  white-space: nowrap;
+  background: white;
+  color: var(--muted);
+  transition: all 0.2s;
+}
+.info-tab:hover { border-color: var(--terracotta); color: var(--terracotta); }
+.info-tab.active {
+  background: var(--terracotta);
+  color: white;
+  border-color: var(--terracotta);
+}
+
+.info-content {
+  display: none;
+}
+.info-content.active {
+  display: block;
+  animation: fadeIn 0.3s ease;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.info-card {
+  background: white;
+  border-radius: 12px;
+  padding: 16px;
+  border: 1px solid var(--border);
+  margin-bottom: 12px;
+}
+
+.info-card h4 {
+  font-family: 'Noto Serif SC', serif;
+  font-size: 14px;
+  color: var(--warm-dark);
+  margin-bottom: 10px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.info-card p {
+  font-size: 13px;
+  color: var(--muted);
+  line-height: 1.8;
+}
+
+.info-card ul {
+  font-size: 13px;
+  color: var(--muted);
+  line-height: 1.8;
+  padding-left: 16px;
+}
+
+.info-card li {
+  margin-bottom: 6px;
+}
+
+.highlight-box {
+  background: linear-gradient(135deg, var(--sand) 0%, #e8f0e8 100%);
+  border-left: 3px solid var(--terracotta);
+  padding: 12px 16px;
+  border-radius: 0 8px 8px 0;
+  margin: 12px 0;
+}
+
+.highlight-box p {
+  font-size: 12px;
+  color: var(--warm-dark);
+  line-height: 1.7;
+}
+
+.story-grid {
+  display: grid;
+  gap: 12px;
+}
+
+.story-card {
+  background: white;
+  border-radius: 12px;
+  padding: 16px;
+  border: 1px solid var(--border);
+}
+
+.story-card h5 {
+  font-size: 13px;
+  color: var(--terracotta);
+  margin-bottom: 8px;
+  font-weight: 600;
+}
+
+.story-card p {
+  font-size: 12px;
+  color: var(--muted);
+  line-height: 1.7;
+}
+
+.landmark-list {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+
+.landmark-item {
+  background: var(--sand);
+  padding: 10px 12px;
+  border-radius: 8px;
+  font-size: 12px;
+}
+
+.landmark-item strong {
+  color: var(--warm-dark);
+  display: block;
+  margin-bottom: 2px;
+}
+
+.landmark-item span {
+  color: var(--muted);
+  font-size: 11px;
+}
+
+@media (max-width: 768px) {
+  .main { flex-direction: column; }
+  #map-container { height: 50vh; }
+  .sidebar { width: 100%; height: 50vh; border-left: none; border-top: 1px solid var(--border); }
+  .topbar-title { font-size: 16px; }
+  .food-grid { grid-template-columns: 1fr; }
+  .landmark-list { grid-template-columns: 1fr; }
+}
+
+.github-link {
+  position: fixed;
+  bottom: 20px;
+  right: 20px;
+  background: white;
+  padding: 10px 16px;
+  border-radius: 24px;
+  box-shadow: 0 2px 12px rgba(0,0,0,0.15);
+  font-size: 12px;
+  color: var(--warm-dark);
+  text-decoration: none;
+  z-index: 1001;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  border: 1px solid var(--border);
+}
+.github-link:hover {
+  background: var(--sand);
+}
+</style>
+</head>
+
+<body>
+<div class="topbar">
+  <div class="topbar-title">🚶 大理 CityWalk</div>
+  <div class="route-tabs" id="routeTabs">
+    <div class="route-tab active" data-route="r1" style="background:var(--route1)">① 古城漫步</div>
+    <div class="route-tab" data-route="r2">② 洱海环湖</div>
+    <div class="route-tab" data-route="r3">③ 苍山探秘</div>
+    <div class="route-tab" data-route="r4">④ 双廊慢生活</div>
+  </div>
+</div>
+
+<div class="main">
+  <div id="map-container"></div>
+  
+  <div class="sidebar" id="sidebar">
+    <div class="city-intro">
+      <div class="city-name">大理</div>
+      <div class="city-sub">风花雪月 · 文献名邦 · 千年古都<br>「下关风，上关花，苍山雪，洱海月」</div>
+      <div class="city-tags">
+        <span class="city-tag">🏛️ 大理古城</span>
+        <span class="city-tag">🌊 洱海</span>
+        <span class="city-tag">🏔️ 苍山</span>
+        <span class="city-tag">🎭 白族</span>
+        <span class="city-tag">☕ 喜洲粑粑</span>
+        <span class="city-tag">🌸 风花雪月</span>
+      </div>
+    </div>
+
+    <div class="city-info-section">
+      <div class="info-tabs">
+        <div class="info-tab active" onclick="switchInfoTab(this, 'history')">📜 人文历史</div>
+        <div class="info-tab" onclick="switchInfoTab(this, 'admin')">🏛️ 行政划分</div>
+        <div class="info-tab" onclick="switchInfoTab(this, 'landmarks')">🏯 名胜古迹</div>
+        <div class="info-tab" onclick="switchInfoTab(this, 'stories')">🌟 都市故事</div>
+      </div>
+
+      <div class="info-content active" id="info-history">
+        <div class="info-card">
+          <h4>🕰️ 千年古都</h4>
+          <p>大理，古称「叶榆」，是云南最早的文化发祥地之一。公元738年，南诏国在此建立；公元937年，段思平建立大理国，历时316年。大理是南方丝绸之路和茶马古道的重要枢纽，历史上与中原、东南亚、南亚有着密切交流。</p>
+          <div class="highlight-box">
+            <p><strong>文献名邦</strong>：大理素有「文献名邦」之称，历史上儒释道三教并存，文化繁荣。大理国时期，佛教盛行，被誉为「妙香佛国」。</p>
+          </div>
+        </div>
+        <div class="info-card">
+          <h4>🎭 白族文化</h4>
+          <p>白族是大理的主体民族，有着悠久的历史和灿烂的文化。白族建筑「三坊一照壁」「四合五天井」独具特色；白族扎染、银器锻造、木雕工艺享誉中外；三月街、绕三灵等传统节庆热闹非凡。</p>
+        </div>
+        <div class="info-card">
+          <h4>🏔️ 风花雪月</h4>
+          <p>「下关风，上关花，苍山雪，洱海月」——大理四景闻名遐迩。苍山十九峰十八溪，洱海碧波万顷，构成了大理独特的自然景观。这里四季如春，是无数人向往的「诗和远方」。</p>
+        </div>
+        <div class="info-card">
+          <h4>📖 武侠情缘</h4>
+          <p>金庸笔下的《天龙八部》让大理名扬天下。段誉、段正淳、一灯大师等人物，让大理国成为武侠迷心中的圣地。今天的大理古城，仍能找到小说中的影子。</p>
+        </div>
+      </div>
+
+      <div class="info-content" id="info-admin">
+        <div class="info-card">
+          <h4>📍 行政区划</h4>
+          <p>大理白族自治州下辖1市11县：</p>
+          <ul style="margin-top:10px">
+            <li><strong>大理市</strong>：州府所在地，古城、洱海、苍山</li>
+            <li><strong>漾濞县</strong>：核桃之乡，石门关景区</li>
+            <li><strong>祥云县</strong>：云南之源，洱海卫故地</li>
+            <li><strong>宾川县</strong>：鸡足山佛教圣地</li>
+            <li><strong>弥渡县</strong>：花灯之乡，小河淌水发源地</li>
+            <li><strong>南涧县</strong>：无量山樱花谷</li>
+            <li><strong>巍山县</strong>：南诏国发祥地</li>
+            <li><strong>永平县</strong>：博南古道，核桃之乡</li>
+            <li><strong>云龙县</strong>：诺邓古村，太极锁水</li>
+            <li><strong>洱源县</strong>：高原水乡，温泉之乡</li>
+            <li><strong>剑川县</strong>：木雕之乡，沙溪古镇</li>
+            <li><strong>鹤庆县</strong>：银都水乡，新华村银器</li>
+          </ul>
+        </div>
+        <div class="info-card">
+          <h4>🌆 城市格局</h4>
+          <p>大理市位于洱海之滨，背靠苍山：</p>
+          <div class="highlight-box">
+            <p><strong>一水绕苍山，苍山抱古城</strong>：洱海如月抱苍山之腰，大理古城坐落于苍山洱海之间，形成「山-城-水」的独特格局。</p>
+          </div>
+        </div>
+        <div class="info-card">
+          <h4>📊 基本数据</h4>
+          <ul>
+            <li>总面积：29,459 平方公里</li>
+            <li>常住人口：约 333 万（2023年）</li>
+            <li>GDP：约 1,700 亿元（2023年）</li>
+            <li>气候：低纬高原季风气候，四季如春</li>
+            <li>市花：杜鹃花 | 市树：大理杜鹃</li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="info-content" id="info-landmarks">
+        <div class="info-card">
+          <h4>🏛️ 必游古迹</h4>
+          <div class="landmark-list">
+            <div class="landmark-item">
+              <strong>大理古城</strong>
+              <span>明代古城墙</span>
+            </div>
+            <div class="landmark-item">
+              <strong>崇圣寺三塔</strong>
+              <span>大理国皇家寺院</span>
+            </div>
+            <div class="landmark-item">
+              <strong>蝴蝶泉</strong>
+              <span>爱情圣地</span>
+            </div>
+            <div class="landmark-item">
+              <strong>喜洲古镇</strong>
+              <span>白族民居博物馆</span>
+            </div>
+            <div class="landmark-item">
+              <strong>双廊古镇</strong>
+              <span>洱海风光第一镇</span>
+            </div>
+            <div class="landmark-item">
+              <strong>南诏风情岛</strong>
+              <span>洱海三岛之一</span>
+            </div>
+            <div class="landmark-item">
+              <strong>鸡足山</strong>
+              <span>佛教第五大名山</span>
+            </div>
+            <div class="landmark-item">
+              <strong>巍山古城</strong>
+              <span>南诏国发祥地</span>
+            </div>
+          </div>
+        </div>
+        <div class="info-card">
+          <h4>🏺 文化场馆</h4>
+          <ul>
+            <li><strong>大理市博物馆</strong>：南诏大理国历史文物</li>
+            <li><strong>大理州博物馆</strong>：白族文化专题展览</li>
+            <li><strong>蒋公祠</strong>：大理非物质文化遗产展示</li>
+            <li><strong>严家大院</strong>：白族民居建筑典范</li>
+          </ul>
+        </div>
+        <div class="info-card">
+          <h4>🌳 自然风光</h4>
+          <ul>
+            <li><strong>苍山</strong>：十九峰十八溪，海拔4122米</li>
+            <li><strong>洱海</strong>：云南第二大高原湖泊</li>
+            <li><strong>无量山樱花谷</strong>：冬季樱花盛景</li>
+            <li><strong>诺邓古村</strong>：千年白族古村</li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="info-content" id="info-stories">
+        <div class="story-grid">
+          <div class="story-card">
+            <h5>🗡️ 段誉与大理国</h5>
+            <p>金庸《天龙八部》中的段誉，原型是大理国第十五代皇帝段正严。历史上大理国崇佛尚文，22代国王中有9位禅位为僧。段氏家族的传奇，让大理成为武侠迷的朝圣地。</p>
+          </div>
+          <div class="story-card">
+            <h5>🎭 三月街的传说</h5>
+            <p>三月街始于唐代，是白族最盛大的传统节日。传说观音菩萨在三月十五到大理传经，后人于此日礼拜，逐渐演变成物资交流会。今天的三月街，仍是滇西最大的集市。</p>
+          </div>
+          <div class="story-card">
+            <h5>🦋 蝴蝶泉的爱情</h5>
+            <p>蝴蝶泉因电影《五朵金花》而闻名。传说雯姑与霞郎在此殉情，化为蝴蝶。每年四月，彩蝶纷飞，成为大理浪漫的象征。白族青年男女在此对歌传情，延续着古老的传统。</p>
+          </div>
+          <div class="story-card">
+            <h5>☕ 大理的文艺复兴</h5>
+            <p>2010年后，大理成为文艺青年的聚集地。音乐人、画家、作家纷纷移居大理，古城内外咖啡馆、书店、民宿林立。大理，成为「逃离北上广」的代名词，也是诗和远方的具象化。</p>
+          </div>
+          <div class="story-card">
+            <h5>🍜 喜洲粑粑的故事</h5>
+            <p>喜洲粑粑是大理最负盛名的小吃，有甜咸两种。传说清末喜洲商人严子珍创制，作为马帮路上的干粮。今天的喜洲粑粑，已成为大理美食的名片。</p>
+          </div>
+          <div class="story-card">
+            <h5>🌸 风花雪月的诗意</h5>
+            <p>「下关风，上关花，苍山雪，洱海月」——这四个字道尽大理之美。下关因风口而风大，上关曾以花闻名，苍山终年积雪，洱海月照苍山雪，构成「银苍玉洱」的绝美画卷。</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="route-section" id="section-r1">
+      <div class="route-header" onclick="toggleRoute('r1')">
+        <div class="route-label">
+          <div class="route-dot" style="background:var(--route1)"></div>
+          <div class="route-title">① 大理古城漫步</div>
+        </div>
+        <div class="route-meta">全程约 3km · 纯步行 · 建议 4小时</div>
+      </div>
+      <div class="stations" id="stations-r1">
+        <div class="station-item" onclick="focusStation('r1',0)">
+          <div class="station-num" style="background:var(--route1)">1</div>
+          <div class="station-info">
+            <div class="station-name">南门楼</div>
+            <div class="station-note">大理古城正门，郭沫若题字，登楼俯瞰古城全景</div>
+            <div class="station-duration">⏱ 建议 30分钟 · 免费</div>
+          </div>
+        </div>
+        <div class="station-item" onclick="focusStation('r1',1)">
+          <div class="station-num" style="background:var(--route1)">2</div>
+          <div class="station-info">
+            <div class="station-name">复兴路步行街</div>
+            <div class="station-note">古城主街，洋人街、红龙井，文艺店铺与酒吧林立</div>
+            <div class="station-duration">⏱ 建议 1.5小时 · 免费</div>
+          </div>
+        </div>
+        <div class="station-item" onclick="focusStation('r1',2)">
+          <div class="station-num" style="background:var(--route1)">3</div>
+          <div class="station-info">
+            <div class="station-name">五华楼</div>
+            <div class="station-note">南诏国宾馆旧址，古城中心地标，夜景绝美</div>
+            <div class="station-duration">⏱ 建议 30分钟 · 免费</div>
+          </div>
+        </div>
+        <div class="station-item" onclick="focusStation('r1',3)">
+          <div class="station-num" style="background:var(--route1)">4</div>
+          <div class="station-info">
+            <div class="station-name">人民路</div>
+            <div class="station-note">最文艺的街道，独立书店、咖啡馆、手工艺品店</div>
+            <div class="station-duration">⏱ 建议 1小时 · 免费</div>
+          </div>
+        </div>
+        <div class="station-item" onclick="focusStation('r1',4)">
+          <div class="station-num" style="background:var(--route1)">5</div>
+          <div class="station-info">
+            <div class="station-name">洋人街（护国路）</div>
+            <div class="station-note">老外聚集区，中西餐厅、酒吧，夜生活丰富</div>
+            <div class="station-duration">⏱ 建议 1小时 · 免费</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="route-section" id="section-r2">
+      <div class="route-header" onclick="toggleRoute('r2')">
+        <div class="route-label">
+          <div class="route-dot" style="background:var(--route2)"></div>
+          <div class="route-title">② 洱海生态廊道</div>
+        </div>
+        <div class="route-meta">全程约 10km · 骑行/步行 · 建议 半天</div>
+      </div>
+      <div class="stations" id="stations-r2" style="display:none">
+        <div class="station-item" onclick="focusStation('r2',0)">
+          <div class="station-num" style="background:var(--route2)">1</div>
+          <div class="station-info">
+            <div class="station-name">龙龛码头</div>
+            <div class="station-note">洱海日出最佳观赏点，水杉、海鸥、晨光，摄影圣地</div>
+            <div class="station-duration">⏱ 建议 1小时 · 免费</div>
+          </div>
+        </div>
+        <div class="station-item" onclick="focusStation('r2',1)">
+          <div class="station-num" style="background:var(--route2)">2</div>
+          <div class="station-info">
+            <div class="station-name">才村码头</div>
+            <div class="station-note">洱海生态廊道起点，骑行、漫步，亲近洱海</div>
+            <div class="station-duration">⏱ 建议 1小时 · 免费</div>
+          </div>
+        </div>
+        <div class="station-item" onclick="focusStation('r2',2)">
+          <div class="station-num" style="background:var(--route2)">3</div>
+          <div class="station-info">
+            <div class="station-name">磻溪S弯</div>
+            <div class="station-note">网红打卡地，S型弯道伸向洱海，日出日落绝美</div>
+            <div class="station-duration">⏱ 建议 1小时 · 免费</div>
+          </div>
+        </div>
+        <div class="station-item" onclick="focusStation('r2',3)">
+          <div class="station-num" style="background:var(--route2)">4</div>
+          <div class="station-info">
+            <div class="station-name">喜洲古镇</div>
+            <div class="station-note">白族民居博物馆，严家大院、转角楼、喜洲粑粑</div>
+            <div class="station-duration">⏱ 建议 2小时 · 免费</div>
+          </div>
+        </div>
+        <div class="station-item" onclick="focusStation('r2',4)">
+          <div class="station-num" style="background:var(--route2)">5</div>
+          <div class="station-info">
+            <div class="station-name">海舌公园</div>
+            <div class="station-note">洱海三面临水的半岛，夫妻树、生态湿地</div>
+            <div class="station-duration">⏱ 建议 1小时 · 免费</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="route-section" id="section-r3">
+      <div class="route-header" onclick="toggleRoute('r3')">
+        <div class="route-label">
+          <div class="route-dot" style="background:var(--route3)"></div>
+          <div class="route-title">③ 苍山探秘</div>
+        </div>
+        <div class="route-meta">需乘索道 · 建议 半天</div>
+      </div>
+      <div class="stations" id="stations-r3" style="display:none">
+        <div class="station-item" onclick="focusStation('r3',0)">
+          <div class="station-num" style="background:var(--route3)">1</div>
+          <div class="station-info">
+            <div class="station-name">感通索道</div>
+            <div class="station-note">登苍山中段，清碧溪、珍珑棋局，玉带路徒步</div>
+            <div class="station-duration">⏱ 建议 3小时 · 索道¥80</div>
+          </div>
+        </div>
+        <div class="station-item" onclick="focusStation('r3',1)">
+          <div class="station-num" style="background:var(--route3)">2</div>
+          <div class="station-info">
+            <div class="station-name">洗马潭索道</div>
+            <div class="station-note">直达苍山之巅，海拔3920米，洗马潭、杜鹃花</div>
+            <div class="station-duration">⏱ 建议 4小时 · 索道¥300</div>
+          </div>
+        </div>
+        <div class="station-item" onclick="focusStation('r3',2)">
+          <div class="station-num" style="background:var(--route3)">3</div>
+          <div class="station-info">
+            <div class="station-name">寂照庵</div>
+            <div class="station-note">最美尼姑庵，多肉植物、素斋，静心之地</div>
+            <div class="station-duration">⏱ 建议 1.5小时 · 素斋¥20</div>
+          </div>
+        </div>
+        <div class="station-item" onclick="focusStation('r3',3)">
+          <div class="station-num" style="background:var(--route3)">4</div>
+          <div class="station-info">
+            <div class="station-name">崇圣寺三塔</div>
+            <div class="station-note">大理国皇家寺院，千年古塔，倒影公园</div>
+            <div class="station-duration">⏱ 建议 2小时 · 门票¥75</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="route-section" id="section-r4">
+      <div class="route-header" onclick="toggleRoute('r4')">
+        <div class="route-label">
+          <div class="route-dot" style="background:var(--route4)"></div>
+          <div class="route-title">④ 双廊慢生活</div>
+        </div>
+        <div class="route-meta">需乘车前往 · 建议 一天</div>
+      </div>
+      <div class="stations" id="stations-r4" style="display:none">
+        <div class="station-item" onclick="focusStation('r4',0)">
+          <div class="station-num" style="background:var(--route4)">1</div>
+          <div class="station-info">
+            <div class="station-name">双廊古镇</div>
+            <div class="station-note">洱海风光第一镇，杨丽萍太阳宫、月亮宫所在地</div>
+            <div class="station-duration">⏱ 建议 2小时 · 免费</div>
+          </div>
+        </div>
+        <div class="station-item" onclick="focusStation('r4',1)">
+          <div class="station-num" style="background:var(--route4)">2</div>
+          <div class="station-info">
+            <div class="station-name">南诏风情岛</div>
+            <div class="station-note">洱海三岛之一，汉白玉观音像、南诏行宫</div>
+            <div class="station-duration">⏱ 建议 1.5小时 · 船票+门票¥50</div>
+          </div>
+        </div>
+        <div class="station-item" onclick="focusStation('r4',2)">
+          <div class="station-num" style="background:var(--route4)">3</div>
+          <div class="station-info">
+            <div class="station-name">玉几岛</div>
+            <div class="station-note">杨丽萍艺术酒店，洱海最佳观景点之一</div>
+            <div class="station-duration">⏱ 建议 1小时 · 门票¥10</div>
+          </div>
+        </div>
+        <div class="station-item" onclick="focusStation('r4',3)">
+          <div class="station-num" style="background:var(--route4)">4</div>
+          <div class="station-info">
+            <div class="station-name">挖色镇</div>
+            <div class="station-note">洱海东岸小镇，小普陀、海印村，日落绝美</div>
+            <div class="station-duration">⏱ 建议 1.5小时 · 免费</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="food-section">
+      <div class="food-title">🍜 大理必吃美食速查</div>
+      <div class="food-grid">
+        <div class="food-item">
+          <div class="food-name">喜洲粑粑</div>
+          <div class="food-loc">📍 喜洲古镇、古城各店</div>
+        </div>
+        <div class="food-item">
+          <div class="food-name">过桥米线</div>
+          <div class="food-loc">📍 古城各店</div>
+        </div>
+        <div class="food-item">
+          <div class="food-name">乳扇</div>
+          <div class="food-loc">📍 古城小吃摊</div>
+        </div>
+        <div class="food-item">
+          <div class="food-name">酸辣鱼</div>
+          <div class="food-loc">📍 白族餐厅</div>
+        </div>
+        <div class="food-item">
+          <div class="food-name">饵丝/饵块</div>
+          <div class="food-loc">📍 早餐店、小吃摊</div>
+        </div>
+        <div class="food-item">
+          <div class="food-name">鲜花饼</div>
+          <div class="food-loc">📍 嘉华、潘祥记</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="tips-section">
+      <div class="tips-title">📌 大理出行贴士</div>
+      <div class="tip-item">紫外线强，务必做好防晒，帽子、墨镜必备</div>
+      <div class="tip-item">早晚温差大，即使是夏天也要带外套</div>
+      <div class="tip-item">洱海生态廊道禁止机动车，建议租自行车或电动车</div>
+      <div class="tip-item">苍山海拔高，洗马潭索道注意高原反应</div>
+      <div class="tip-item">古城内石板路不平，建议穿舒适的平底鞋</div>
+      <div class="tip-item">最佳游览季：3-5月（樱花、杜鹃）、9-11月（秋高气爽）</div>
+    </div>
+
+  </div>
+</div>
+
+<a href="https://github.com/zljie/citywalk-planner-skill" class="github-link" target="_blank">
+  <svg height="16" viewBox="0 0 16 16" width="16" fill="currentColor">
+    <path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"/>
+  </svg>
+  查看源码
+</a>
+
+<script>
+var routeData = {
+  r1: {
+    name: '大理古城漫步',
+    color: '#4a7c59',
+    center: [25.6965, 100.1650],
+    zoom: 15,
+    stations: [
+      { name: '南门楼', lat: 25.6930, lng: 100.1630, note: '古城正门' },
+      { name: '复兴路', lat: 25.6960, lng: 100.1650, note: '主街步行街' },
+      { name: '五华楼', lat: 25.6970, lng: 100.1660, note: '古城中心' },
+      { name: '人民路', lat: 25.6980, lng: 100.1670, note: '文艺街道' },
+      { name: '洋人街', lat: 25.6950, lng: 100.1680, note: '酒吧街' }
+    ]
+  },
+  r2: {
+    name: '洱海生态廊道',
+    color: '#d4a574',
+    center: [25.7200, 100.1800],
+    zoom: 13,
+    stations: [
+      { name: '龙龛码头', lat: 25.7100, lng: 100.1750, note: '日出最佳点' },
+      { name: '才村码头', lat: 25.7150, lng: 100.1800, note: '廊道起点' },
+      { name: '磻溪S弯', lat: 25.7250, lng: 100.1850, note: '网红打卡' },
+      { name: '喜洲古镇', lat: 25.7500, lng: 100.2000, note: '白族民居' },
+      { name: '海舌公园', lat: 25.7600, lng: 100.2100, note: '洱海半岛' }
+    ]
+  },
+  r3: {
+    name: '苍山探秘',
+    color: '#2e5a7c',
+    center: [25.6800, 100.1500],
+    zoom: 13,
+    stations: [
+      { name: '感通索道', lat: 25.6850, lng: 100.1550, note: '玉带路徒步' },
+      { name: '洗马潭索道', lat: 25.6750, lng: 100.1450, note: '苍山之巅' },
+      { name: '寂照庵', lat: 25.6900, lng: 100.1600, note: '最美尼姑庵' },
+      { name: '崇圣寺三塔', lat: 25.7050, lng: 100.1500, note: '千年古塔' }
+    ]
+  },
+  r4: {
+    name: '双廊慢生活',
+    color: '#8b6b4a',
+    center: [25.9200, 100.2000],
+    zoom: 14,
+    stations: [
+      { name: '双廊古镇', lat: 25.9200, lng: 100.2000, note: '洱海第一镇' },
+      { name: '南诏风情岛', lat: 25.9250, lng: 100.2050, note: '洱海三岛' },
+      { name: '玉几岛', lat: 25.9180, lng: 100.1980, note: '杨丽萍艺术' },
+      { name: '挖色镇', lat: 25.8800, lng: 100.2200, note: '日落绝美' }
+    ]
+  }
+};
+
+var activeRoute = 'r1';
+var map = null;
+var routeLayers = {};
+var markers = {};
+
+function gcj02ToWgs84(lat, lng) {
+  var a = 6378245.0;
+  var ee = 0.00669342162296594323;
+  
+  function transformLat(lng, lat) {
+    var ret = -100.0 + 2.0 * lng + 3.0 * lat + 0.2 * lat * lat + 0.1 * lng * lat + 0.2 * Math.sqrt(Math.abs(lng));
+    ret += (20.0 * Math.sin(6.0 * lng * Math.PI) + 20.0 * Math.sin(2.0 * lng * Math.PI)) * 2.0 / 3.0;
+    ret += (20.0 * Math.sin(lat * Math.PI) + 40.0 * Math.sin(lat / 3.0 * Math.PI)) * 2.0 / 3.0;
+    ret += (160.0 * Math.sin(lat / 12.0 * Math.PI) + 320 * Math.sin(lat * Math.PI / 30.0)) * 2.0 / 3.0;
+    return ret;
+  }
+  
+  function transformLng(lng, lat) {
+    var ret = 300.0 + lng + 2.0 * lat + 0.1 * lng * lng + 0.1 * lng * lat + 0.1 * Math.sqrt(Math.abs(lng));
+    ret += (20.0 * Math.sin(6.0 * lng * Math.PI) + 20.0 * Math.sin(2.0 * lng * Math.PI)) * 2.0 / 3.0;
+    ret += (20.0 * Math.sin(lng * Math.PI) + 40.0 * Math.sin(lng / 3.0 * Math.PI)) * 2.0 / 3.0;
+    ret += (150.0 * Math.sin(lng / 12.0 * Math.PI) + 300.0 * Math.sin(lng / 30.0 * Math.PI)) * 2.0 / 3.0;
+    return ret;
+  }
+  
+  var dlat = transformLat(lng - 105.0, lat - 35.0);
+  var dlng = transformLng(lng - 105.0, lat - 35.0);
+  var radlat = lat / 180.0 * Math.PI;
+  var magic = Math.sin(radlat);
+  magic = 1 - ee * magic * magic;
+  var sqrtmagic = Math.sqrt(magic);
+  dlat = (dlat * 180.0) / ((a * (1 - ee)) / (magic * sqrtmagic) * Math.PI);
+  dlng = (dlng * 180.0) / (a / sqrtmagic * Math.cos(radlat) * Math.PI);
+  
+  return [lat - dlat, lng - dlng];
+}
+
+function initMap() {
+  var data = routeData[activeRoute];
+  var centerWgs = gcj02ToWgs84(data.center[0], data.center[1]);
+  
+  map = L.map('map-container', {
+    center: centerWgs,
+    zoom: data.zoom,
+    zoomControl: true
+  });
+
+  L.tileLayer('https://webrd0{s}.is.autonavi.com/appmaptile?lang=zh_cn&size=1&scale=1&style=8&x={x}&y={y}&z={z}', {
+    subdomains: '1234',
+    attribution: '&copy; 高德地图'
+  }).addTo(map);
+
+  Object.keys(routeData).forEach(function(key) {
+    buildRouteLayer(key);
+  });
+
+  showRoute(activeRoute);
+}
+
+function buildRouteLayer(routeKey) {
+  var rd = routeData[routeKey];
+  var color = rd.color;
+  
+  var routeMarkers = [];
+  rd.stations.forEach(function(s, i) {
+    var wgs = gcj02ToWgs84(s.lat, s.lng);
+    var icon = createNumberedIcon(i + 1, color);
+    
+    var marker = L.marker(wgs, { icon: icon })
+      .bindPopup('<b style="color:' + color + '">' + s.name + '</b><br>' + s.note);
+    
+    marker.on('click', function() {
+      highlightStation(routeKey, i);
+    });
+    
+    routeMarkers.push(marker);
+  });
+
+  var latlngs = rd.stations.map(function(s) {
+    return gcj02ToWgs84(s.lat, s.lng);
+  });
+  
+  var polyline = L.polyline(latlngs, {
+    color: color,
+    weight: 4,
+    opacity: 0.8,
+    dashArray: null
+  });
+
+  var layerGroup = L.layerGroup([polyline, ...routeMarkers]);
+  routeLayers[routeKey] = layerGroup;
+  markers[routeKey] = routeMarkers;
+}
+
+function createNumberedIcon(num, color) {
+  var svg = '<svg xmlns="http://www.w3.org/2000/svg" width="32" height="40" viewBox="0 0 32 40">' +
+    '<path d="M16 38C16 38 4 24 4 14C4 7.373 9.373 2 16 2C22.627 2 28 7.373 28 14C28 24 16 38 16 38Z" fill="' + color + '" stroke="white" stroke-width="2"/>' +
+    '<circle cx="16" cy="14" r="6" fill="white"/>' +
+    '<text x="16" y="17" text-anchor="middle" font-size="10" font-weight="bold" fill="' + color + '" font-family="sans-serif">' + num + '</text>' +
+    '</svg>';
+  
+  return L.divIcon({
+    html: svg,
+    className: 'custom-pin',
+    iconSize: [32, 40],
+    iconAnchor: [16, 38],
+    popupAnchor: [0, -36]
+  });
+}
+
+function showRoute(routeKey) {
+  if (routeLayers[routeKey]) {
+    routeLayers[routeKey].addTo(map);
+  }
+  
+  var rd = routeData[routeKey];
+  var bounds = rd.stations.map(function(s) {
+    return gcj02ToWgs84(s.lat, s.lng);
+  });
+  map.fitBounds(bounds, { padding: [50, 50], maxZoom: 15 });
+}
+
+function hideRoute(routeKey) {
+  if (routeLayers[routeKey]) {
+    map.removeLayer(routeLayers[routeKey]);
+  }
+}
+
+function switchRoute(routeKey) {
+  if (activeRoute === routeKey) return;
+  
+  hideRoute(activeRoute);
+  
+  activeRoute = routeKey;
+  showRoute(routeKey);
+  
+  var tabs = document.querySelectorAll('.route-tab');
+  tabs.forEach(function(tab) {
+    var isActive = tab.dataset.route === routeKey;
+    tab.classList.toggle('active', isActive);
+    if (isActive) {
+      tab.style.background = routeData[routeKey].color;
+      tab.style.color = 'white';
+    } else {
+      tab.style.background = 'white';
+      tab.style.color = '#6a7a6a';
+    }
+  });
+}
+
+function toggleRoute(routeKey) {
+  switchRoute(routeKey);
+  
+  Object.keys(routeData).forEach(function(key) {
+    var el = document.getElementById('stations-' + key);
+    if (el) el.style.display = key === routeKey ? 'block' : 'none';
+  });
+  
+  var section = document.getElementById('section-' + routeKey);
+  if (section) section.scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+function highlightStation(routeKey, index) {
+  switchRoute(routeKey);
+  
+  Object.keys(routeData).forEach(function(key) {
+    var el = document.getElementById('stations-' + key);
+    if (el) el.style.display = key === routeKey ? 'block' : 'none';
+  });
+  
+  var items = document.querySelectorAll('#stations-' + routeKey + ' .station-item');
+  items.forEach(function(item, i) {
+    item.classList.toggle('highlighted', i === index);
+  });
+  if (items[index]) items[index].scrollIntoView({ behavior: 'smooth', block: 'center' });
+  
+  if (markers[routeKey] && markers[routeKey][index]) {
+    markers[routeKey][index].openPopup();
+  }
+}
+
+function focusStation(routeKey, index) {
+  highlightStation(routeKey, index);
+  
+  var station = routeData[routeKey].stations[index];
+  var wgs = gcj02ToWgs84(station.lat, station.lng);
+  map.setView(wgs, 16);
+}
+
+document.getElementById('routeTabs').addEventListener('click', function(e) {
+  var tab = e.target.closest('.route-tab');
+  if (tab) toggleRoute(tab.dataset.route);
+});
+
+function switchInfoTab(tabElement, contentId) {
+  var tabs = document.querySelectorAll('.info-tab');
+  tabs.forEach(function(tab) {
+    tab.classList.remove('active');
+  });
+  tabElement.classList.add('active');
+  
+  var contents = document.querySelectorAll('.info-content');
+  contents.forEach(function(content) {
+    content.classList.remove('active');
+  });
+  document.getElementById('info-' + contentId).classList.add('active');
+}
+
+window.addEventListener('load', initMap);
+
+document.getElementById('stations-r1').style.display = 'block';
+</script>
+</body>
+</html>

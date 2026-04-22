@@ -134,8 +134,10 @@ citywalk-planner/
 | 城市 | 路线数 | 主题覆盖 | 状态 | 在线预览 |
 |------|--------|----------|------|----------|
 | 长沙 | 4条 | 湘江人文、历史老街、文化山脉、夜味长沙 | ✅ 完整 | [查看地图](https://zljie.github.io/citywalk-planner-skill/changsha-citywalk.html) |
-| 汕头 | 5条 | 古城、美食、海岛、新城、水乡 | ✅ 完整 | 即将上线 |
-| 揭阳 | 4条 | 古城、美食、文化、新城 | ✅ 完整 | 即将上线 |
+| 上海 | 4条 | 外滩经典、法租界、老城厢、陆家嘴 | ✅ 完整 | [查看地图](https://zljie.github.io/citywalk-planner-skill/shanghai-citywalk.html) |
+| 汕头 | 4条 | 小公园老城、开埠文化、海滨风光、潮汕美食 | ✅ 完整 | [查看地图](https://zljie.github.io/citywalk-planner-skill/shantou-citywalk.html) |
+| 揭阳 | 4条 | 古城文化、宗教古迹、美食探索、山水风光 | ✅ 完整 | [查看地图](https://zljie.github.io/citywalk-planner-skill/jieyang-citywalk.html) |
+| 大理 | 4条 | 古城漫步、洱海环湖、苍山探秘、双廊慢生活 | ✅ 完整 | [查看地图](https://zljie.github.io/citywalk-planner-skill/dali-citywalk.html) |
 
 ### 🌐 GitHub Pages 在线预览
 
@@ -143,7 +145,12 @@ citywalk-planner/
 
 **🔗 首页**: https://zljie.github.io/citywalk-planner-skill/
 
-**📍 长沙 CityWalk**: https://zljie.github.io/citywalk-planner-skill/changsha-citywalk.html
+**📍 各城市直达**:
+- [长沙 CityWalk](https://zljie.github.io/citywalk-planner-skill/changsha-citywalk.html)
+- [上海 CityWalk](https://zljie.github.io/citywalk-planner-skill/shanghai-citywalk.html)
+- [汕头 CityWalk](https://zljie.github.io/citywalk-planner-skill/shantou-citywalk.html)
+- [揭阳 CityWalk](https://zljie.github.io/citywalk-planner-skill/jieyang-citywalk.html)
+- [大理 CityWalk](https://zljie.github.io/citywalk-planner-skill/dali-citywalk.html)
 
 > 💡 **提示**: 如果链接无法访问，请确保仓库已启用 GitHub Pages（Settings → Pages → Source → Deploy from a branch → main/docs）
 

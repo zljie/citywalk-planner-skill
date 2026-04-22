@@ -1,0 +1,1132 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>汕头 CityWalk 路线地图 | Shantou CityWalk Guide</title>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=Ma+Shan+Zheng&family=Noto+Serif+SC:wght@300;400;600;700&family=Noto+Sans+SC:wght@300;400;500;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --ink: #1a1410;
+  --warm-dark: #3d2b1f;
+  --terracotta: #c45c3e;
+  --amber: #d4a574;
+  --sand: #f5f0e8;
+  --cream: #faf8f5;
+  --sea: #2e7d8a;
+  --muted: #7a6a5a;
+  --border: #e0d5c8;
+  --route1: #c45c3e;
+  --route2: #d4a574;
+  --route3: #2e7d8a;
+  --route4: #6b8e6b;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  font-family: 'Noto Sans SC', sans-serif;
+  background: var(--cream);
+  color: var(--ink);
+  height: 100vh;
+  overflow: hidden;
+}
+
+.topbar {
+  position: fixed;
+  top: 0; left: 0; right: 0;
+  height: 56px;
+  background: rgba(250,248,245,0.96);
+  backdrop-filter: blur(8px);
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  padding: 0 20px;
+  z-index: 1000;
+  gap: 10px;
+}
+
+.topbar-title {
+  font-family: 'Ma Shan Zheng', cursive;
+  font-size: 20px;
+  color: var(--terracotta);
+  margin-right: 12px;
+  white-space: nowrap;
+}
+
+.route-tabs {
+  display: flex;
+  gap: 6px;
+  overflow-x: auto;
+  scrollbar-width: none;
+  flex: 1;
+}
+.route-tabs::-webkit-scrollbar { display: none; }
+
+.route-tab {
+  padding: 5px 14px;
+  border-radius: 20px;
+  border: 1.5px solid var(--border);
+  font-size: 13px;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: all 0.2s;
+  background: white;
+  color: var(--muted);
+}
+.route-tab:hover { border-color: var(--terracotta); color: var(--terracotta); }
+.route-tab.active {
+  color: white;
+  border-color: transparent;
+}
+
+.main {
+  display: flex;
+  height: 100vh;
+  padding-top: 56px;
+}
+
+#map-container {
+  flex: 1;
+  height: 100%;
+  background: #e8e4de;
+}
+
+.sidebar {
+  width: 380px;
+  height: 100%;
+  overflow-y: auto;
+  background: var(--cream);
+  border-left: 1px solid var(--border);
+  scrollbar-width: thin;
+  scrollbar-color: var(--border) transparent;
+}
+.sidebar::-webkit-scrollbar { width: 4px; }
+.sidebar::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+
+.city-intro {
+  padding: 20px 20px 16px;
+  border-bottom: 1px solid var(--border);
+}
+.city-name {
+  font-family: 'Ma Shan Zheng', cursive;
+  font-size: 32px;
+  color: var(--terracotta);
+}
+.city-sub {
+  font-size: 13px;
+  color: var(--muted);
+  margin-top: 4px;
+  line-height: 1.6;
+}
+.city-tags {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+  margin-top: 10px;
+}
+.city-tag {
+  padding: 3px 10px;
+  border-radius: 12px;
+  font-size: 11px;
+  background: var(--sand);
+  color: var(--warm-dark);
+  border: 1px solid var(--border);
+}
+
+.route-section {
+  border-bottom: 1px solid var(--border);
+}
+
+.route-header {
+  padding: 14px 20px 10px;
+  cursor: pointer;
+  user-select: none;
+}
+.route-label {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.route-dot {
+  width: 12px; height: 12px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+.route-title {
+  font-family: 'Noto Serif SC', serif;
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--warm-dark);
+}
+.route-meta {
+  font-size: 12px;
+  color: var(--muted);
+  margin-top: 4px;
+  padding-left: 22px;
+}
+
+.stations {
+  padding: 0 20px 14px;
+}
+
+.station-item {
+  display: flex;
+  gap: 12px;
+  padding: 10px 0;
+  cursor: pointer;
+  border-radius: 8px;
+  transition: background 0.15s;
+  padding-left: 6px;
+  padding-right: 6px;
+}
+.station-item:hover { background: var(--sand); }
+.station-item.highlighted { background: var(--sand); }
+
+.station-num {
+  width: 26px; height: 26px;
+  border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 12px;
+  font-weight: 700;
+  color: white;
+  flex-shrink: 0;
+  margin-top: 1px;
+}
+.station-info { flex: 1; }
+.station-name {
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--warm-dark);
+}
+.station-note {
+  font-size: 12px;
+  color: var(--muted);
+  margin-top: 3px;
+  line-height: 1.5;
+}
+.station-duration {
+  font-size: 11px;
+  color: var(--terracotta);
+  margin-top: 3px;
+  font-weight: 500;
+}
+
+.food-section {
+  padding: 16px 20px;
+  border-bottom: 1px solid var(--border);
+}
+.food-title {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--warm-dark);
+  margin-bottom: 10px;
+}
+.food-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+.food-item {
+  padding: 8px 10px;
+  background: var(--sand);
+  border-radius: 8px;
+  font-size: 12px;
+}
+.food-name {
+  font-weight: 500;
+  color: var(--warm-dark);
+}
+.food-loc {
+  font-size: 11px;
+  color: var(--muted);
+  margin-top: 2px;
+}
+
+.tips-section {
+  padding: 16px 20px 20px;
+}
+.tips-title {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--warm-dark);
+  margin-bottom: 8px;
+}
+.tip-item {
+  font-size: 12px;
+  color: var(--muted);
+  line-height: 1.7;
+  padding-left: 12px;
+  position: relative;
+}
+.tip-item::before {
+  content: '•';
+  position: absolute;
+  left: 0;
+  color: var(--amber);
+}
+
+.leaflet-popup-content-wrapper {
+  border-radius: 12px;
+  padding: 0;
+  overflow: hidden;
+}
+.leaflet-popup-content {
+  margin: 0;
+  padding: 14px 16px;
+  font-family: 'Noto Sans SC', sans-serif;
+  min-width: 200px;
+}
+.custom-pin {
+  background: transparent;
+  border: none;
+}
+
+.city-info-section {
+  padding: 20px;
+  border-bottom: 1px solid var(--border);
+}
+
+.info-tabs {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 16px;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+.info-tabs::-webkit-scrollbar { display: none; }
+
+.info-tab {
+  padding: 6px 14px;
+  border-radius: 16px;
+  border: 1px solid var(--border);
+  font-size: 12px;
+  cursor: pointer;
+  white-space: nowrap;
+  background: white;
+  color: var(--muted);
+  transition: all 0.2s;
+}
+.info-tab:hover { border-color: var(--terracotta); color: var(--terracotta); }
+.info-tab.active {
+  background: var(--terracotta);
+  color: white;
+  border-color: var(--terracotta);
+}
+
+.info-content {
+  display: none;
+}
+.info-content.active {
+  display: block;
+  animation: fadeIn 0.3s ease;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.info-card {
+  background: white;
+  border-radius: 12px;
+  padding: 16px;
+  border: 1px solid var(--border);
+  margin-bottom: 12px;
+}
+
+.info-card h4 {
+  font-family: 'Noto Serif SC', serif;
+  font-size: 14px;
+  color: var(--warm-dark);
+  margin-bottom: 10px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.info-card p {
+  font-size: 13px;
+  color: var(--muted);
+  line-height: 1.8;
+}
+
+.info-card ul {
+  font-size: 13px;
+  color: var(--muted);
+  line-height: 1.8;
+  padding-left: 16px;
+}
+
+.info-card li {
+  margin-bottom: 6px;
+}
+
+.highlight-box {
+  background: linear-gradient(135deg, var(--sand) 0%, #f0ece4 100%);
+  border-left: 3px solid var(--terracotta);
+  padding: 12px 16px;
+  border-radius: 0 8px 8px 0;
+  margin: 12px 0;
+}
+
+.highlight-box p {
+  font-size: 12px;
+  color: var(--warm-dark);
+  line-height: 1.7;
+}
+
+.story-grid {
+  display: grid;
+  gap: 12px;
+}
+
+.story-card {
+  background: white;
+  border-radius: 12px;
+  padding: 16px;
+  border: 1px solid var(--border);
+}
+
+.story-card h5 {
+  font-size: 13px;
+  color: var(--terracotta);
+  margin-bottom: 8px;
+  font-weight: 600;
+}
+
+.story-card p {
+  font-size: 12px;
+  color: var(--muted);
+  line-height: 1.7;
+}
+
+.landmark-list {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+
+.landmark-item {
+  background: var(--sand);
+  padding: 10px 12px;
+  border-radius: 8px;
+  font-size: 12px;
+}
+
+.landmark-item strong {
+  color: var(--warm-dark);
+  display: block;
+  margin-bottom: 2px;
+}
+
+.landmark-item span {
+  color: var(--muted);
+  font-size: 11px;
+}
+
+@media (max-width: 768px) {
+  .main { flex-direction: column; }
+  #map-container { height: 50vh; }
+  .sidebar { width: 100%; height: 50vh; border-left: none; border-top: 1px solid var(--border); }
+  .topbar-title { font-size: 16px; }
+  .food-grid { grid-template-columns: 1fr; }
+  .landmark-list { grid-template-columns: 1fr; }
+}
+
+.github-link {
+  position: fixed;
+  bottom: 20px;
+  right: 20px;
+  background: white;
+  padding: 10px 16px;
+  border-radius: 24px;
+  box-shadow: 0 2px 12px rgba(0,0,0,0.15);
+  font-size: 12px;
+  color: var(--warm-dark);
+  text-decoration: none;
+  z-index: 1001;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  border: 1px solid var(--border);
+}
+.github-link:hover {
+  background: var(--sand);
+}
+</style>
+</head>
+
+<body>
+<div class="topbar">
+  <div class="topbar-title">🚶 汕头 CityWalk</div>
+  <div class="route-tabs" id="routeTabs">
+    <div class="route-tab active" data-route="r1" style="background:var(--route1)">① 小公园老城</div>
+    <div class="route-tab" data-route="r2">② 开埠文化</div>
+    <div class="route-tab" data-route="r3">③ 海滨风光</div>
+    <div class="route-tab" data-route="r4">④ 潮汕美食</div>
+  </div>
+</div>
+
+<div class="main">
+  <div id="map-container"></div>
+  
+  <div class="sidebar" id="sidebar">
+    <div class="city-intro">
+      <div class="city-name">汕头</div>
+      <div class="city-sub">百载商埠 · 潮汕文化核心 · 海滨邹鲁<br>「有海水处就有潮汕人」</div>
+      <div class="city-tags">
+        <span class="city-tag">🏛️ 小公园</span>
+        <span class="city-tag">🍜 牛肉火锅</span>
+        <span class="city-tag">🦐 潮汕生腌</span>
+        <span class="city-tag">🎭 潮剧</span>
+        <span class="city-tag">🏖️ 南澳岛</span>
+        <span class="city-tag">☕ 功夫茶</span>
+      </div>
+    </div>
+
+    <div class="city-info-section">
+      <div class="info-tabs">
+        <div class="info-tab active" onclick="switchInfoTab(this, 'history')">📜 人文历史</div>
+        <div class="info-tab" onclick="switchInfoTab(this, 'admin')">🏛️ 行政划分</div>
+        <div class="info-tab" onclick="switchInfoTab(this, 'landmarks')">🏯 名胜古迹</div>
+        <div class="info-tab" onclick="switchInfoTab(this, 'stories')">🌟 都市故事</div>
+      </div>
+
+      <div class="info-content active" id="info-history">
+        <div class="info-card">
+          <h4>🕰️ 百载商埠</h4>
+          <p>汕头，1860年正式开埠，是中国最早对外开放的港口城市之一。20世纪30年代，汕头港吞吐量曾居全国第三，被誉为「岭东门户、华南要冲」。百年商埠的繁华，在小公园骑楼群中依然可见。</p>
+          <div class="highlight-box">
+            <p><strong>侨乡文化</strong>：汕头是中国著名侨乡，海外潮人超过1500万，遍布世界各地。「有潮水处就有潮人」，潮汕人的商业传奇从汕头走向全球。</p>
+          </div>
+        </div>
+        <div class="info-card">
+          <h4>🎭 潮汕文化</h4>
+          <p>潮汕文化是中华文化的重要分支，以潮剧、潮乐、潮绣、潮州木雕、工夫茶等为代表。汕头作为潮汕文化的核心城市，保存了最完整的潮汕传统。</p>
+        </div>
+        <div class="info-card">
+          <h4>🏘️ 骑楼记忆</h4>
+          <p>小公园片区的骑楼建筑群，是汕头开埠历史的见证。巴洛克风格的雕花、中西合璧的立面、环形放射状的路网，构成了独特的城市风貌。</p>
+        </div>
+        <div class="info-card">
+          <h4>🍵 工夫茶之道</h4>
+          <p>「工夫茶」是潮汕人生活中不可或缺的部分。无论商贾巨富还是平民百姓，家家户户都有茶具。品茶、论茶，是潮汕人的生活方式。</p>
+        </div>
+      </div>
+
+      <div class="info-content" id="info-admin">
+        <div class="info-card">
+          <h4>📍 行政区划</h4>
+          <p>汕头市是广东省地级市，下辖6区1县：</p>
+          <ul style="margin-top:10px">
+            <li><strong>金平区</strong>：老城区核心，小公园、开埠文化区</li>
+            <li><strong>龙湖区</strong>：新区中心，市政府所在地</li>
+            <li><strong>濠江区</strong>：礐石风景区、汕头港</li>
+            <li><strong>潮阳区</strong>：海门镇、莲花峰</li>
+            <li><strong>潮南区</strong>：纺织工业重镇</li>
+            <li><strong>澄海区</strong>：玩具之都、陈慈黉故居</li>
+            <li><strong>南澳县</strong>：海岛县，北回归线穿过</li>
+          </ul>
+        </div>
+        <div class="info-card">
+          <h4>🌆 城市格局</h4>
+          <p>汕头位于韩江三角洲南端，内海湾穿城而过：</p>
+          <div class="highlight-box">
+            <p><strong>一湾两岸</strong>：汕头内海湾是中国大陆唯一的城市内海湾。北岸是繁华的老城区，南岸是礐石山风景区，海湾大桥连接两岸。</p>
+          </div>
+        </div>
+        <div class="info-card">
+          <h4>📊 基本数据</h4>
+          <ul>
+            <li>总面积：2,199 平方公里</li>
+            <li>常住人口：约 563 万（2023年）</li>
+            <li>GDP：约 3,158 亿元（2023年）</li>
+            <li>气候：亚热带季风气候，温和湿润</li>
+            <li>市花：金凤花 | 市树：凤凰木</li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="info-content" id="info-landmarks">
+        <div class="info-card">
+          <h4>🏛️ 必游古迹</h4>
+          <div class="landmark-list">
+            <div class="landmark-item">
+              <strong>小公园</strong>
+              <span>百年骑楼群</span>
+            </div>
+            <div class="landmark-item">
+              <strong>中山纪念亭</strong>
+              <span>小公园地标</span>
+            </div>
+            <div class="landmark-item">
+              <strong>老妈宫</strong>
+              <span>天后宫</span>
+            </div>
+            <div class="landmark-item">
+              <strong>开埠文化陈列馆</strong>
+              <span>近代史见证</span>
+            </div>
+            <div class="landmark-item">
+              <strong>西堤公园</strong>
+              <span>侨批文化</span>
+            </div>
+            <div class="landmark-item">
+              <strong>礐石风景区</strong>
+              <span>4A级景区</span>
+            </div>
+            <div class="landmark-item">
+              <strong>南澳岛</strong>
+              <span>广东唯一海岛县</span>
+            </div>
+            <div class="landmark-item">
+              <strong>陈慈黉故居</strong>
+              <span>岭南第一侨宅</span>
+            </div>
+          </div>
+        </div>
+        <div class="info-card">
+          <h4>🏺 文化场馆</h4>
+          <ul>
+            <li><strong>潮汕历史文化博览中心</strong>：展示潮汕文化精髓</li>
+            <li><strong>汕头博物馆</strong>：历史文物与潮汕民俗</li>
+            <li><strong>侨批文物馆</strong>：世界记忆遗产侨批文化</li>
+            <li><strong>潮剧艺术博物馆</strong>：国家级非遗潮剧</li>
+          </ul>
+        </div>
+        <div class="info-card">
+          <h4>🌳 自然风光</h4>
+          <ul>
+            <li><strong>南澳岛</strong>：北回归线标志塔、青澳湾</li>
+            <li><strong>礐石山</strong>：汕头八景之首，登高望海</li>
+            <li><strong>海滨长廊</strong>：观海长廊，市民休闲地</li>
+            <li><strong>莲花峰</strong>：海门莲花峰，文天祥足迹</li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="info-content" id="info-stories">
+        <div class="story-grid">
+          <div class="story-card">
+            <h5>🍲 牛肉火锅的诞生</h5>
+            <p>汕头牛肉火锅讲究「鲜」字，从屠宰到上桌不超过3小时。不同部位有不同名称：吊龙、匙柄、五花趾、胸口油...每头牛只有30%的肉能上桌。八合里海记从街边小店开遍全国，成为汕头美食名片。</p>
+          </div>
+          <div class="story-card">
+            <h5>📜 侨批的故事</h5>
+            <p>侨批是海外华侨寄回国内的家书与汇款。19世纪至20世纪中叶，数以千万计的侨批通过民间渠道寄回潮汕。2013年，「侨批档案」入选世界记忆遗产，成为人类共同的文化财富。</p>
+          </div>
+          <div class="story-card">
+            <h5>🎭 潮剧的传承</h5>
+            <p>潮剧是用潮汕方言演唱的古老剧种，有500多年历史。2006年入选国家级非遗。方展荣等潮剧名家，让这门古老艺术在新时代焕发生机。每逢节庆，乡村潮剧演出场场爆满。</p>
+          </div>
+          <div class="story-card">
+            <h5>🍵 功夫茶的讲究</h5>
+            <p>「工夫茶」不是茶叶名，而是一种泡茶方式。关公巡城、韩信点兵、高冲低洒...每一个动作都有讲究。潮汕人喝茶不分场合，街头巷尾随处可见茶具。茶，是潮汕人的待客之道。</p>
+          </div>
+          <div class="story-card">
+            <h5>🏗️ 小公园的重生</h5>
+            <p>小公园曾是汕头最繁华的商业中心，后因城市变迁而衰落。2016年起，汕头启动小公园保育活化工程，修复骑楼建筑，引入文创产业。如今的小公园，再次成为游客打卡圣地。</p>
+          </div>
+          <div class="story-card">
+            <h5>🌊 红头船的传奇</h5>
+            <p>红头船是清代潮汕人下南洋的主要交通工具。船头漆成红色，故称「红头船」。数百万潮汕人乘坐红头船远赴东南亚，开创了中国近代史上最壮丽的移民潮。</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="route-section" id="section-r1">
+      <div class="route-header" onclick="toggleRoute('r1')">
+        <div class="route-label">
+          <div class="route-dot" style="background:var(--route1)"></div>
+          <div class="route-title">① 小公园老城漫步</div>
+        </div>
+        <div class="route-meta">全程约 2km · 纯步行 · 建议 3小时</div>
+      </div>
+      <div class="stations" id="stations-r1">
+        <div class="station-item" onclick="focusStation('r1',0)">
+          <div class="station-num" style="background:var(--route1)">1</div>
+          <div class="station-info">
+            <div class="station-name">中山纪念亭</div>
+            <div class="station-note">小公园核心地标，环形放射状路网中心，1934年建成</div>
+            <div class="station-duration">⏱ 建议 30分钟 · 免费</div>
+          </div>
+        </div>
+        <div class="station-item" onclick="focusStation('r1',1)">
+          <div class="station-num" style="background:var(--route1)">2</div>
+          <div class="station-info">
+            <div class="station-name">安平路骑楼街</div>
+            <div class="station-note">百年骑楼建筑群，百货大楼、南生公司旧址，复古风情</div>
+            <div class="station-duration">⏱ 建议 1小时 · 免费</div>
+          </div>
+        </div>
+        <div class="station-item" onclick="focusStation('r1',2)">
+          <div class="station-num" style="background:var(--route1)">3</div>
+          <div class="station-info">
+            <div class="station-name">老妈宫（天后宫）</div>
+            <div class="station-note">始建于清嘉庆年间，汕头最古老的妈祖庙，香火鼎盛</div>
+            <div class="station-duration">⏱ 建议 30分钟 · 免费</div>
+          </div>
+        </div>
+        <div class="station-item" onclick="focusStation('r1',3)">
+          <div class="station-num" style="background:var(--route1)">4</div>
+          <div class="station-info">
+            <div class="station-name">国平路美食街</div>
+            <div class="station-note">老妈宫粽球、爱西干面、西天巷蚝烙，老字号云集</div>
+            <div class="station-duration">⏱ 建议 1小时 · 人均¥30-50</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="route-section" id="section-r2">
+      <div class="route-header" onclick="toggleRoute('r2')">
+        <div class="route-label">
+          <div class="route-dot" style="background:var(--route2)"></div>
+          <div class="route-title">② 开埠文化之旅</div>
+        </div>
+        <div class="route-meta">全程约 3km · 步行为主 · 建议 4小时</div>
+      </div>
+      <div class="stations" id="stations-r2" style="display:none">
+        <div class="station-item" onclick="focusStation('r2',0)">
+          <div class="station-num" style="background:var(--route2)">1</div>
+          <div class="station-info">
+            <div class="station-name">汕头开埠文化陈列馆</div>
+            <div class="station-note">了解汕头1860年开埠历史，近代中西文化交流见证</div>
+            <div class="station-duration">⏱ 建议 1小时 · 免费</div>
+          </div>
+        </div>
+        <div class="station-item" onclick="focusStation('r2',1)">
+          <div class="station-num" style="background:var(--route2)">2</div>
+          <div class="station-info">
+            <div class="station-name">侨批文物馆</div>
+            <div class="station-note">世界记忆遗产，海外华侨家书与汇款的历史见证</div>
+            <div class="station-duration">⏱ 建议 1小时 · 免费</div>
+          </div>
+        </div>
+        <div class="station-item" onclick="focusStation('r2',2)">
+          <div class="station-num" style="background:var(--route2)">3</div>
+          <div class="station-info">
+            <div class="station-name">西堤公园</div>
+            <div class="station-note">侨批文化主题公园，观内海湾日落最佳地点</div>
+            <div class="station-duration">⏱ 建议 1小时 · 免费</div>
+          </div>
+        </div>
+        <div class="station-item" onclick="focusStation('r2',3)">
+          <div class="station-num" style="background:var(--route2)">4</div>
+          <div class="station-info">
+            <div class="station-name">汕头邮政总局大楼</div>
+            <div class="station-note">1922年建成的欧式建筑，汕头开埠时期重要历史建筑</div>
+            <div class="station-duration">⏱ 建议 30分钟 · 外观参观</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="route-section" id="section-r3">
+      <div class="route-header" onclick="toggleRoute('r3')">
+        <div class="route-label">
+          <div class="route-dot" style="background:var(--route3)"></div>
+          <div class="route-title">③ 海滨风光游</div>
+        </div>
+        <div class="route-meta">全程约 5km · 需乘车 · 建议 半天</div>
+      </div>
+      <div class="stations" id="stations-r3" style="display:none">
+        <div class="station-item" onclick="focusStation('r3',0)">
+          <div class="station-num" style="background:var(--route3)">1</div>
+          <div class="station-info">
+            <div class="station-name">广场轮渡</div>
+            <div class="station-note">1元体验跨海轮渡，欣赏内海湾两岸风光，日落时分最美</div>
+            <div class="station-duration">⏱ 建议 30分钟 · 船票¥1</div>
+          </div>
+        </div>
+        <div class="station-item" onclick="focusStation('r3',1)">
+          <div class="station-num" style="background:var(--route3)">2</div>
+          <div class="station-info">
+            <div class="station-name">礐石风景区</div>
+            <div class="station-note">4A级景区，汕头八景之首，登高俯瞰内海湾全景</div>
+            <div class="station-duration">⏱ 建议 2小时 · 门票¥12</div>
+          </div>
+        </div>
+        <div class="station-item" onclick="focusStation('r3',2)">
+          <div class="station-num" style="background:var(--route3)">3</div>
+          <div class="station-info">
+            <div class="station-name">海滨长廊</div>
+            <div class="station-note">观海长廊，市民休闲散步好去处，夜景迷人</div>
+            <div class="station-duration">⏱ 建议 1小时 · 免费</div>
+          </div>
+        </div>
+        <div class="station-item" onclick="focusStation('r3',3)">
+          <div class="station-num" style="background:var(--route3)">4</div>
+          <div class="station-info">
+            <div class="station-name">东海岸公园</div>
+            <div class="station-note">新建滨海公园，观海听涛，现代化城市景观</div>
+            <div class="station-duration">⏱ 建议 1小时 · 免费</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="route-section" id="section-r4">
+      <div class="route-header" onclick="toggleRoute('r4')">
+        <div class="route-label">
+          <div class="route-dot" style="background:var(--route4)"></div>
+          <div class="route-title">④ 潮汕美食巡礼</div>
+        </div>
+        <div class="route-meta">全程约 2km · 纯步行 · 建议 3小时</div>
+      </div>
+      <div class="stations" id="stations-r4" style="display:none">
+        <div class="station-item" onclick="focusStation('r4',0)">
+          <div class="station-num" style="background:var(--route4)">1</div>
+          <div class="station-info">
+            <div class="station-name">八合里海记牛肉火锅</div>
+            <div class="station-note">汕头牛肉火锅代表，从街边小店到全国连锁，必吃吊龙、匙柄</div>
+            <div class="station-duration">⏱ 建议 1.5小时 · 人均¥100-150</div>
+          </div>
+        </div>
+        <div class="station-item" onclick="focusStation('r4',1)">
+          <div class="station-num" style="background:var(--route4)">2</div>
+          <div class="station-info">
+            <div class="station-name">龙眼南路美食街</div>
+            <div class="station-note">肠粉、粿汁、蚝烙、甜汤，本地人最爱的美食聚集地</div>
+            <div class="station-duration">⏱ 建议 1.5小时 · 人均¥30-50</div>
+          </div>
+        </div>
+        <div class="station-item" onclick="focusStation('r4',2)">
+          <div class="station-num" style="background:var(--route4)">3</div>
+          <div class="station-info">
+            <div class="station-name">镇邦路美食街</div>
+            <div class="station-note">老字号一条街，西天巷蚝烙、爱西干面、老妈宫粽球</div>
+            <div class="station-duration">⏱ 建议 1小时 · 人均¥20-40</div>
+          </div>
+        </div>
+        <div class="station-item" onclick="focusStation('r4',3)">
+          <div class="station-num" style="background:var(--route4)">4</div>
+          <div class="station-info">
+            <div class="station-name">潮汕工夫茶体验</div>
+            <div class="station-note">凤凰单丛、鸭屎香，体验正宗潮汕功夫茶艺</div>
+            <div class="station-duration">⏱ 建议 1小时 · 人均¥30-80</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="food-section">
+      <div class="food-title">🍜 汕头必吃美食速查</div>
+      <div class="food-grid">
+        <div class="food-item">
+          <div class="food-name">牛肉火锅</div>
+          <div class="food-loc">📍 八合里海记、杏花吴记</div>
+        </div>
+        <div class="food-item">
+          <div class="food-name">潮汕肠粉</div>
+          <div class="food-loc">📍 龙眼南路各店</div>
+        </div>
+        <div class="food-item">
+          <div class="food-name">蚝烙</div>
+          <div class="food-loc">📍 西天巷蚝烙</div>
+        </div>
+        <div class="food-item">
+          <div class="food-name">粿汁</div>
+          <div class="food-loc">📍 镇邦路、老市区</div>
+        </div>
+        <div class="food-item">
+          <div class="food-name">生腌海鲜</div>
+          <div class="food-loc">📍 长平路、龙眼市场</div>
+        </div>
+        <div class="food-item">
+          <div class="food-name">功夫茶</div>
+          <div class="food-loc">📍 各茶馆、茶庄</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="tips-section">
+      <div class="tips-title">📌 汕头出行贴士</div>
+      <div class="tip-item">小公园区域适合步行，穿舒适的鞋子</div>
+      <div class="tip-item">牛肉火锅建议提前预约，节假日排队严重</div>
+      <div class="tip-item">南澳岛需单独安排一天，可自驾或包车</div>
+      <div class="tip-item">潮汕话难懂，但年轻人普遍会普通话</div>
+      <div class="tip-item">生腌海鲜肠胃敏感者慎食</div>
+      <div class="tip-item">最佳游览季：3-5月、9-11月，避开台风季</div>
+    </div>
+
+  </div>
+</div>
+
+<a href="https://github.com/zljie/citywalk-planner-skill" class="github-link" target="_blank">
+  <svg height="16" viewBox="0 0 16 16" width="16" fill="currentColor">
+    <path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"/>
+  </svg>
+  查看源码
+</a>
+
+<script>
+var routeData = {
+  r1: {
+    name: '小公园老城漫步',
+    color: '#c45c3e',
+    center: [23.3575, 116.7111],
+    zoom: 15,
+    stations: [
+      { name: '中山纪念亭', lat: 23.3575, lng: 116.7111, note: '小公园地标' },
+      { name: '安平路骑楼街', lat: 23.3580, lng: 116.7100, note: '百年骑楼群' },
+      { name: '老妈宫', lat: 23.3560, lng: 116.7120, note: '最古老妈祖庙' },
+      { name: '国平路美食街', lat: 23.3570, lng: 116.7130, note: '老字号美食' }
+    ]
+  },
+  r2: {
+    name: '开埠文化之旅',
+    color: '#d4a574',
+    center: [23.3560, 116.7150],
+    zoom: 15,
+    stations: [
+      { name: '开埠文化陈列馆', lat: 23.3565, lng: 116.7140, note: '1860开埠历史' },
+      { name: '侨批文物馆', lat: 23.3555, lng: 116.7155, note: '世界记忆遗产' },
+      { name: '西堤公园', lat: 23.3540, lng: 116.7180, note: '侨批文化公园' },
+      { name: '邮政总局大楼', lat: 23.3570, lng: 116.7160, note: '欧式历史建筑' }
+    ]
+  },
+  r3: {
+    name: '海滨风光游',
+    color: '#2e7d8a',
+    center: [23.3500, 116.7200],
+    zoom: 13,
+    stations: [
+      { name: '广场轮渡', lat: 23.3560, lng: 116.7180, note: '1元跨海轮渡' },
+      { name: '礐石风景区', lat: 23.3400, lng: 116.7200, note: '4A级景区' },
+      { name: '海滨长廊', lat: 23.3550, lng: 116.7250, note: '观海步道' },
+      { name: '东海岸公园', lat: 23.3650, lng: 116.7400, note: '滨海公园' }
+    ]
+  },
+  r4: {
+    name: '潮汕美食巡礼',
+    color: '#6b8e6b',
+    center: [23.3600, 116.7150],
+    zoom: 15,
+    stations: [
+      { name: '八合里海记', lat: 23.3620, lng: 116.7120, note: '牛肉火锅代表' },
+      { name: '龙眼南路', lat: 23.3630, lng: 116.7180, note: '美食一条街' },
+      { name: '镇邦路', lat: 23.3580, lng: 116.7140, note: '老字号聚集' },
+      { name: '功夫茶体验', lat: 23.3610, lng: 116.7160, note: '潮汕茶艺' }
+    ]
+  }
+};
+
+var activeRoute = 'r1';
+var map = null;
+var routeLayers = {};
+var markers = {};
+
+function gcj02ToWgs84(lat, lng) {
+  var a = 6378245.0;
+  var ee = 0.00669342162296594323;
+  
+  function transformLat(lng, lat) {
+    var ret = -100.0 + 2.0 * lng + 3.0 * lat + 0.2 * lat * lat + 0.1 * lng * lat + 0.2 * Math.sqrt(Math.abs(lng));
+    ret += (20.0 * Math.sin(6.0 * lng * Math.PI) + 20.0 * Math.sin(2.0 * lng * Math.PI)) * 2.0 / 3.0;
+    ret += (20.0 * Math.sin(lat * Math.PI) + 40.0 * Math.sin(lat / 3.0 * Math.PI)) * 2.0 / 3.0;
+    ret += (160.0 * Math.sin(lat / 12.0 * Math.PI) + 320 * Math.sin(lat * Math.PI / 30.0)) * 2.0 / 3.0;
+    return ret;
+  }
+  
+  function transformLng(lng, lat) {
+    var ret = 300.0 + lng + 2.0 * lat + 0.1 * lng * lng + 0.1 * lng * lat + 0.1 * Math.sqrt(Math.abs(lng));
+    ret += (20.0 * Math.sin(6.0 * lng * Math.PI) + 20.0 * Math.sin(2.0 * lng * Math.PI)) * 2.0 / 3.0;
+    ret += (20.0 * Math.sin(lng * Math.PI) + 40.0 * Math.sin(lng / 3.0 * Math.PI)) * 2.0 / 3.0;
+    ret += (150.0 * Math.sin(lng / 12.0 * Math.PI) + 300.0 * Math.sin(lng / 30.0 * Math.PI)) * 2.0 / 3.0;
+    return ret;
+  }
+  
+  var dlat = transformLat(lng - 105.0, lat - 35.0);
+  var dlng = transformLng(lng - 105.0, lat - 35.0);
+  var radlat = lat / 180.0 * Math.PI;
+  var magic = Math.sin(radlat);
+  magic = 1 - ee * magic * magic;
+  var sqrtmagic = Math.sqrt(magic);
+  dlat = (dlat * 180.0) / ((a * (1 - ee)) / (magic * sqrtmagic) * Math.PI);
+  dlng = (dlng * 180.0) / (a / sqrtmagic * Math.cos(radlat) * Math.PI);
+  
+  return [lat - dlat, lng - dlng];
+}
+
+function initMap() {
+  var data = routeData[activeRoute];
+  var centerWgs = gcj02ToWgs84(data.center[0], data.center[1]);
+  
+  map = L.map('map-container', {
+    center: centerWgs,
+    zoom: data.zoom,
+    zoomControl: true
+  });
+
+  L.tileLayer('https://webrd0{s}.is.autonavi.com/appmaptile?lang=zh_cn&size=1&scale=1&style=8&x={x}&y={y}&z={z}', {
+    subdomains: '1234',
+    attribution: '&copy; 高德地图'
+  }).addTo(map);
+
+  Object.keys(routeData).forEach(function(key) {
+    buildRouteLayer(key);
+  });
+
+  showRoute(activeRoute);
+}
+
+function buildRouteLayer(routeKey) {
+  var rd = routeData[routeKey];
+  var color = rd.color;
+  
+  var routeMarkers = [];
+  rd.stations.forEach(function(s, i) {
+    var wgs = gcj02ToWgs84(s.lat, s.lng);
+    var icon = createNumberedIcon(i + 1, color);
+    
+    var marker = L.marker(wgs, { icon: icon })
+      .bindPopup('<b style="color:' + color + '">' + s.name + '</b><br>' + s.note);
+    
+    marker.on('click', function() {
+      highlightStation(routeKey, i);
+    });
+    
+    routeMarkers.push(marker);
+  });
+
+  var latlngs = rd.stations.map(function(s) {
+    return gcj02ToWgs84(s.lat, s.lng);
+  });
+  
+  var polyline = L.polyline(latlngs, {
+    color: color,
+    weight: 4,
+    opacity: 0.8,
+    dashArray: null
+  });
+
+  var layerGroup = L.layerGroup([polyline, ...routeMarkers]);
+  routeLayers[routeKey] = layerGroup;
+  markers[routeKey] = routeMarkers;
+}
+
+function createNumberedIcon(num, color) {
+  var svg = '<svg xmlns="http://www.w3.org/2000/svg" width="32" height="40" viewBox="0 0 32 40">' +
+    '<path d="M16 38C16 38 4 24 4 14C4 7.373 9.373 2 16 2C22.627 2 28 7.373 28 14C28 24 16 38 16 38Z" fill="' + color + '" stroke="white" stroke-width="2"/>' +
+    '<circle cx="16" cy="14" r="6" fill="white"/>' +
+    '<text x="16" y="17" text-anchor="middle" font-size="10" font-weight="bold" fill="' + color + '" font-family="sans-serif">' + num + '</text>' +
+    '</svg>';
+  
+  return L.divIcon({
+    html: svg,
+    className: 'custom-pin',
+    iconSize: [32, 40],
+    iconAnchor: [16, 38],
+    popupAnchor: [0, -36]
+  });
+}
+
+function showRoute(routeKey) {
+  if (routeLayers[routeKey]) {
+    routeLayers[routeKey].addTo(map);
+  }
+  
+  var rd = routeData[routeKey];
+  var bounds = rd.stations.map(function(s) {
+    return gcj02ToWgs84(s.lat, s.lng);
+  });
+  map.fitBounds(bounds, { padding: [50, 50], maxZoom: 15 });
+}
+
+function hideRoute(routeKey) {
+  if (routeLayers[routeKey]) {
+    map.removeLayer(routeLayers[routeKey]);
+  }
+}
+
+function switchRoute(routeKey) {
+  if (activeRoute === routeKey) return;
+  
+  hideRoute(activeRoute);
+  
+  activeRoute = routeKey;
+  showRoute(routeKey);
+  
+  var tabs = document.querySelectorAll('.route-tab');
+  tabs.forEach(function(tab) {
+    var isActive = tab.dataset.route === routeKey;
+    tab.classList.toggle('active', isActive);
+    if (isActive) {
+      tab.style.background = routeData[routeKey].color;
+      tab.style.color = 'white';
+    } else {
+      tab.style.background = 'white';
+      tab.style.color = '#7a6a5a';
+    }
+  });
+}
+
+function toggleRoute(routeKey) {
+  switchRoute(routeKey);
+  
+  Object.keys(routeData).forEach(function(key) {
+    var el = document.getElementById('stations-' + key);
+    if (el) el.style.display = key === routeKey ? 'block' : 'none';
+  });
+  
+  var section = document.getElementById('section-' + routeKey);
+  if (section) section.scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+function highlightStation(routeKey, index) {
+  switchRoute(routeKey);
+  
+  Object.keys(routeData).forEach(function(key) {
+    var el = document.getElementById('stations-' + key);
+    if (el) el.style.display = key === routeKey ? 'block' : 'none';
+  });
+  
+  var items = document.querySelectorAll('#stations-' + routeKey + ' .station-item');
+  items.forEach(function(item, i) {
+    item.classList.toggle('highlighted', i === index);
+  });
+  if (items[index]) items[index].scrollIntoView({ behavior: 'smooth', block: 'center' });
+  
+  if (markers[routeKey] && markers[routeKey][index]) {
+    markers[routeKey][index].openPopup();
+  }
+}
+
+function focusStation(routeKey, index) {
+  highlightStation(routeKey, index);
+  
+  var station = routeData[routeKey].stations[index];
+  var wgs = gcj02ToWgs84(station.lat, station.lng);
+  map.setView(wgs, 16);
+}
+
+document.getElementById('routeTabs').addEventListener('click', function(e) {
+  var tab = e.target.closest('.route-tab');
+  if (tab) toggleRoute(tab.dataset.route);
+});
+
+function switchInfoTab(tabElement, contentId) {
+  var tabs = document.querySelectorAll('.info-tab');
+  tabs.forEach(function(tab) {
+    tab.classList.remove('active');
+  });
+  tabElement.classList.add('active');
+  
+  var contents = document.querySelectorAll('.info-content');
+  contents.forEach(function(content) {
+    content.classList.remove('active');
+  });
+  document.getElementById('info-' + contentId).classList.add('active');
+}
+
+window.addEventListener('load', initMap);
+
+document.getElementById('stations-r1').style.display = 'block';
+</script>
+</body>
+</html>

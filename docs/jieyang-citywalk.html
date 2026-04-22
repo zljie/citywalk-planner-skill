@@ -1,0 +1,1130 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>揭阳 CityWalk 路线地图 | Jieyang CityWalk Guide</title>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=Ma+Shan+Zheng&family=Noto+Serif+SC:wght@300;400;600;700&family=Noto+Sans+SC:wght@300;400;500;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --ink: #1a1410;
+  --warm-dark: #3d2b1f;
+  --terracotta: #8b6914;
+  --amber: #c9a227;
+  --sand: #f5f0e8;
+  --cream: #faf8f5;
+  --sea: #2e5a4c;
+  --muted: #7a6a5a;
+  --border: #e0d5c8;
+  --route1: #8b6914;
+  --route2: #c9a227;
+  --route3: #2e5a4c;
+  --route4: #6b4c6b;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  font-family: 'Noto Sans SC', sans-serif;
+  background: var(--cream);
+  color: var(--ink);
+  height: 100vh;
+  overflow: hidden;
+}
+
+.topbar {
+  position: fixed;
+  top: 0; left: 0; right: 0;
+  height: 56px;
+  background: rgba(250,248,245,0.96);
+  backdrop-filter: blur(8px);
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  padding: 0 20px;
+  z-index: 1000;
+  gap: 10px;
+}
+
+.topbar-title {
+  font-family: 'Ma Shan Zheng', cursive;
+  font-size: 20px;
+  color: var(--terracotta);
+  margin-right: 12px;
+  white-space: nowrap;
+}
+
+.route-tabs {
+  display: flex;
+  gap: 6px;
+  overflow-x: auto;
+  scrollbar-width: none;
+  flex: 1;
+}
+.route-tabs::-webkit-scrollbar { display: none; }
+
+.route-tab {
+  padding: 5px 14px;
+  border-radius: 20px;
+  border: 1.5px solid var(--border);
+  font-size: 13px;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: all 0.2s;
+  background: white;
+  color: var(--muted);
+}
+.route-tab:hover { border-color: var(--terracotta); color: var(--terracotta); }
+.route-tab.active {
+  color: white;
+  border-color: transparent;
+}
+
+.main {
+  display: flex;
+  height: 100vh;
+  padding-top: 56px;
+}
+
+#map-container {
+  flex: 1;
+  height: 100%;
+  background: #e8e4de;
+}
+
+.sidebar {
+  width: 380px;
+  height: 100%;
+  overflow-y: auto;
+  background: var(--cream);
+  border-left: 1px solid var(--border);
+  scrollbar-width: thin;
+  scrollbar-color: var(--border) transparent;
+}
+.sidebar::-webkit-scrollbar { width: 4px; }
+.sidebar::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+
+.city-intro {
+  padding: 20px 20px 16px;
+  border-bottom: 1px solid var(--border);
+}
+.city-name {
+  font-family: 'Ma Shan Zheng', cursive;
+  font-size: 32px;
+  color: var(--terracotta);
+}
+.city-sub {
+  font-size: 13px;
+  color: var(--muted);
+  margin-top: 4px;
+  line-height: 1.6;
+}
+.city-tags {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+  margin-top: 10px;
+}
+.city-tag {
+  padding: 3px 10px;
+  border-radius: 12px;
+  font-size: 11px;
+  background: var(--sand);
+  color: var(--warm-dark);
+  border: 1px solid var(--border);
+}
+
+.route-section {
+  border-bottom: 1px solid var(--border);
+}
+
+.route-header {
+  padding: 14px 20px 10px;
+  cursor: pointer;
+  user-select: none;
+}
+.route-label {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.route-dot {
+  width: 12px; height: 12px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+.route-title {
+  font-family: 'Noto Serif SC', serif;
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--warm-dark);
+}
+.route-meta {
+  font-size: 12px;
+  color: var(--muted);
+  margin-top: 4px;
+  padding-left: 22px;
+}
+
+.stations {
+  padding: 0 20px 14px;
+}
+
+.station-item {
+  display: flex;
+  gap: 12px;
+  padding: 10px 0;
+  cursor: pointer;
+  border-radius: 8px;
+  transition: background 0.15s;
+  padding-left: 6px;
+  padding-right: 6px;
+}
+.station-item:hover { background: var(--sand); }
+.station-item.highlighted { background: var(--sand); }
+
+.station-num {
+  width: 26px; height: 26px;
+  border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 12px;
+  font-weight: 700;
+  color: white;
+  flex-shrink: 0;
+  margin-top: 1px;
+}
+.station-info { flex: 1; }
+.station-name {
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--warm-dark);
+}
+.station-note {
+  font-size: 12px;
+  color: var(--muted);
+  margin-top: 3px;
+  line-height: 1.5;
+}
+.station-duration {
+  font-size: 11px;
+  color: var(--terracotta);
+  margin-top: 3px;
+  font-weight: 500;
+}
+
+.food-section {
+  padding: 16px 20px;
+  border-bottom: 1px solid var(--border);
+}
+.food-title {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--warm-dark);
+  margin-bottom: 10px;
+}
+.food-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+.food-item {
+  padding: 8px 10px;
+  background: var(--sand);
+  border-radius: 8px;
+  font-size: 12px;
+}
+.food-name {
+  font-weight: 500;
+  color: var(--warm-dark);
+}
+.food-loc {
+  font-size: 11px;
+  color: var(--muted);
+  margin-top: 2px;
+}
+
+.tips-section {
+  padding: 16px 20px 20px;
+}
+.tips-title {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--warm-dark);
+  margin-bottom: 8px;
+}
+.tip-item {
+  font-size: 12px;
+  color: var(--muted);
+  line-height: 1.7;
+  padding-left: 12px;
+  position: relative;
+}
+.tip-item::before {
+  content: '•';
+  position: absolute;
+  left: 0;
+  color: var(--amber);
+}
+
+.leaflet-popup-content-wrapper {
+  border-radius: 12px;
+  padding: 0;
+  overflow: hidden;
+}
+.leaflet-popup-content {
+  margin: 0;
+  padding: 14px 16px;
+  font-family: 'Noto Sans SC', sans-serif;
+  min-width: 200px;
+}
+.custom-pin {
+  background: transparent;
+  border: none;
+}
+
+.city-info-section {
+  padding: 20px;
+  border-bottom: 1px solid var(--border);
+}
+
+.info-tabs {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 16px;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+.info-tabs::-webkit-scrollbar { display: none; }
+
+.info-tab {
+  padding: 6px 14px;
+  border-radius: 16px;
+  border: 1px solid var(--border);
+  font-size: 12px;
+  cursor: pointer;
+  white-space: nowrap;
+  background: white;
+  color: var(--muted);
+  transition: all 0.2s;
+}
+.info-tab:hover { border-color: var(--terracotta); color: var(--terracotta); }
+.info-tab.active {
+  background: var(--terracotta);
+  color: white;
+  border-color: var(--terracotta);
+}
+
+.info-content {
+  display: none;
+}
+.info-content.active {
+  display: block;
+  animation: fadeIn 0.3s ease;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.info-card {
+  background: white;
+  border-radius: 12px;
+  padding: 16px;
+  border: 1px solid var(--border);
+  margin-bottom: 12px;
+}
+
+.info-card h4 {
+  font-family: 'Noto Serif SC', serif;
+  font-size: 14px;
+  color: var(--warm-dark);
+  margin-bottom: 10px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.info-card p {
+  font-size: 13px;
+  color: var(--muted);
+  line-height: 1.8;
+}
+
+.info-card ul {
+  font-size: 13px;
+  color: var(--muted);
+  line-height: 1.8;
+  padding-left: 16px;
+}
+
+.info-card li {
+  margin-bottom: 6px;
+}
+
+.highlight-box {
+  background: linear-gradient(135deg, var(--sand) 0%, #f0ece4 100%);
+  border-left: 3px solid var(--terracotta);
+  padding: 12px 16px;
+  border-radius: 0 8px 8px 0;
+  margin: 12px 0;
+}
+
+.highlight-box p {
+  font-size: 12px;
+  color: var(--warm-dark);
+  line-height: 1.7;
+}
+
+.story-grid {
+  display: grid;
+  gap: 12px;
+}
+
+.story-card {
+  background: white;
+  border-radius: 12px;
+  padding: 16px;
+  border: 1px solid var(--border);
+}
+
+.story-card h5 {
+  font-size: 13px;
+  color: var(--terracotta);
+  margin-bottom: 8px;
+  font-weight: 600;
+}
+
+.story-card p {
+  font-size: 12px;
+  color: var(--muted);
+  line-height: 1.7;
+}
+
+.landmark-list {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+
+.landmark-item {
+  background: var(--sand);
+  padding: 10px 12px;
+  border-radius: 8px;
+  font-size: 12px;
+}
+
+.landmark-item strong {
+  color: var(--warm-dark);
+  display: block;
+  margin-bottom: 2px;
+}
+
+.landmark-item span {
+  color: var(--muted);
+  font-size: 11px;
+}
+
+@media (max-width: 768px) {
+  .main { flex-direction: column; }
+  #map-container { height: 50vh; }
+  .sidebar { width: 100%; height: 50vh; border-left: none; border-top: 1px solid var(--border); }
+  .topbar-title { font-size: 16px; }
+  .food-grid { grid-template-columns: 1fr; }
+  .landmark-list { grid-template-columns: 1fr; }
+}
+
+.github-link {
+  position: fixed;
+  bottom: 20px;
+  right: 20px;
+  background: white;
+  padding: 10px 16px;
+  border-radius: 24px;
+  box-shadow: 0 2px 12px rgba(0,0,0,0.15);
+  font-size: 12px;
+  color: var(--warm-dark);
+  text-decoration: none;
+  z-index: 1001;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  border: 1px solid var(--border);
+}
+.github-link:hover {
+  background: var(--sand);
+}
+</style>
+</head>
+
+<body>
+<div class="topbar">
+  <div class="topbar-title">🚶 揭阳 CityWalk</div>
+  <div class="route-tabs" id="routeTabs">
+    <div class="route-tab active" data-route="r1" style="background:var(--route1)">① 古城文化</div>
+    <div class="route-tab" data-route="r2">② 宗教古迹</div>
+    <div class="route-tab" data-route="r3">③ 美食探索</div>
+    <div class="route-tab" data-route="r4">④ 山水风光</div>
+  </div>
+</div>
+
+<div class="main">
+  <div id="map-container"></div>
+  
+  <div class="sidebar" id="sidebar">
+    <div class="city-intro">
+      <div class="city-name">揭阳</div>
+      <div class="city-sub">岭南水城 · 潮汕文化发源地 · 国画之乡<br>「进贤门前，榕水流长，八百年古城风韵」</div>
+      <div class="city-tags">
+        <span class="city-tag">🏛️ 进贤门</span>
+        <span class="city-tag">📚 揭阳学宫</span>
+        <span class="city-tag">🍜 粿汁</span>
+        <span class="city-tag">🎨 青狮</span>
+        <span class="city-tag">🏮 城隍庙</span>
+        <span class="city-tag">🌳 榕江</span>
+      </div>
+    </div>
+
+    <div class="city-info-section">
+      <div class="info-tabs">
+        <div class="info-tab active" onclick="switchInfoTab(this, 'history')">📜 人文历史</div>
+        <div class="info-tab" onclick="switchInfoTab(this, 'admin')">🏛️ 行政划分</div>
+        <div class="info-tab" onclick="switchInfoTab(this, 'landmarks')">🏯 名胜古迹</div>
+        <div class="info-tab" onclick="switchInfoTab(this, 'stories')">🌟 都市故事</div>
+      </div>
+
+      <div class="info-content active" id="info-history">
+        <div class="info-card">
+          <h4>🕰️ 八百年古城</h4>
+          <p>揭阳，别称「榕城」，是广东省历史文化名城。南宋绍兴十年（1140年）设县，距今已有880多年历史。揭阳是潮汕文化的发源地之一，素有「海滨邹鲁」「国画之乡」「小戏之乡」等美誉。</p>
+          <div class="highlight-box">
+            <p><strong>岭南水城</strong>：揭阳因榕江而得名，城内河网密布，古桥众多，形成独特的水乡风貌。榕江是广东第二大河，孕育了灿烂的潮汕文明。</p>
+          </div>
+        </div>
+        <div class="info-card">
+          <h4>🎨 文化瑰宝</h4>
+          <p>揭阳是潮汕文化的重要发祥地。潮剧、潮州音乐、英歌舞、青狮、嵌瓷等非遗项目在此传承。揭阳木雕、潮绣、玉雕等工艺精湛，享誉海内外。</p>
+        </div>
+        <div class="info-card">
+          <h4>📖 崇文重教</h4>
+          <p>揭阳学宫始建于南宋，是岭南地区规模最大、保存最完整的孔庙之一。崇文重教的传统延续至今，揭阳人才辈出，是潮汕地区重要的文化中心。</p>
+        </div>
+        <div class="info-card">
+          <h4>🏮 民俗传承</h4>
+          <p>揭阳民俗活动丰富多彩。正月「行彩桥」、端午「赛龙舟」、中秋「拜月娘」，传统节庆氛围浓厚。城隍庙会、青狮表演等民俗活动吸引众多游客。</p>
+        </div>
+      </div>
+
+      <div class="info-content" id="info-admin">
+        <div class="info-card">
+          <h4>📍 行政区划</h4>
+          <p>揭阳市是广东省地级市，下辖2区2县1市：</p>
+          <ul style="margin-top:10px">
+            <li><strong>榕城区</strong>：市中心，进贤门、学宫、城隍庙所在地</li>
+            <li><strong>揭东区</strong>：新区，工业重镇</li>
+            <li><strong>揭西县</strong>：大洋度假村、黄满寨瀑布</li>
+            <li><strong>惠来县</strong>：沿海县，神泉港、客鸟尾</li>
+            <li><strong>普宁市</strong>：县级市，商贸名城、中药名城</li>
+          </ul>
+        </div>
+        <div class="info-card">
+          <h4>🌆 城市格局</h4>
+          <p>揭阳古城以进贤门为中心，形成独特的城市格局：</p>
+          <div class="highlight-box">
+            <p><strong>三山两水一古城</strong>：黄岐山、紫峰山、桑浦山环绕，榕江、练江穿境而过，古城坐落于榕江平原腹地。</p>
+          </div>
+        </div>
+        <div class="info-card">
+          <h4>📊 基本数据</h4>
+          <ul>
+            <li>总面积：5,240 平方公里</li>
+            <li>常住人口：约 563 万（2023年）</li>
+            <li>GDP：约 2,265 亿元（2023年）</li>
+            <li>气候：亚热带季风气候，雨量充沛</li>
+            <li>市花：莲花 | 市树：榕树</li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="info-content" id="info-landmarks">
+        <div class="info-card">
+          <h4>🏛️ 必游古迹</h4>
+          <div class="landmark-list">
+            <div class="landmark-item">
+              <strong>进贤门</strong>
+              <span>明代城楼地标</span>
+            </div>
+            <div class="landmark-item">
+              <strong>揭阳学宫</strong>
+              <span>岭南最大孔庙</span>
+            </div>
+            <div class="landmark-item">
+              <strong>城隍庙</strong>
+              <span>广东最大城隍庙</span>
+            </div>
+            <div class="landmark-item">
+              <strong>双峰寺</strong>
+              <span>潮汕三大名刹</span>
+            </div>
+            <div class="landmark-item">
+              <strong>丁日昌故居</strong>
+              <span>清代洋务大臣</span>
+            </div>
+            <div class="landmark-item">
+              <strong>禁城</strong>
+              <span>明代古城墙</span>
+            </div>
+            <div class="landmark-item">
+              <strong>揭阳楼</strong>
+              <span>城市新地标</span>
+            </div>
+            <div class="landmark-item">
+              <strong>西湖公园</strong>
+              <span>岭南园林</span>
+            </div>
+          </div>
+        </div>
+        <div class="info-card">
+          <h4>🏺 文化场馆</h4>
+          <ul>
+            <li><strong>揭阳市博物馆</strong>：历史文物与民俗展示</li>
+            <li><strong>潮汕民俗博物馆</strong>：传统生活器具陈列</li>
+            <li><strong>揭阳画院</strong>：国画艺术交流中心</li>
+            <li><strong>青狮文化博物馆</strong>：国家级非遗展示</li>
+          </ul>
+        </div>
+        <div class="info-card">
+          <h4>🌳 自然风光</h4>
+          <ul>
+            <li><strong>黄岐山</strong>：市区绿肺，登高望远</li>
+            <li><strong>榕江</strong>：母亲河，滨江风光带</li>
+            <li><strong>黄满寨瀑布</strong>：岭南第一瀑</li>
+            <li><strong>大洋度假村</strong>：高山草甸，避暑胜地</li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="info-content" id="info-stories">
+        <div class="story-grid">
+          <div class="story-card">
+            <h5>🦁 青狮的传奇</h5>
+            <p>揭阳青狮是国家级非物质文化遗产，与佛山醒狮齐名。青狮体型硕大，舞动时需要多人配合。每逢节庆，青狮巡游，锣鼓喧天，是揭阳最热闹的民俗活动。</p>
+          </div>
+          <div class="story-card">
+            <h5>🌉 行彩桥的习俗</h5>
+            <p>每年正月十一，揭阳人「行彩桥」。人们在石狮桥上挂满彩带，祈求新年平安。这一习俗已有数百年历史，是揭阳独有的年俗。</p>
+          </div>
+          <div class="story-card">
+            <h5>🎭 潮剧的传承</h5>
+            <p>揭阳是潮剧的重要发源地。清代揭阳戏班遍布潮汕，名角辈出。今天的揭阳，仍有众多潮剧票友，乡村戏台常年演出，传统艺术生生不息。</p>
+          </div>
+          <div class="story-card">
+            <h5>🖌️ 国画之乡</h5>
+            <p>揭阳素有「国画之乡」美誉。近现代涌现出孙裴谷、范昌乾等国画大师。今天的揭阳画院，是岭南画派的重要阵地。</p>
+          </div>
+          <div class="story-card">
+            <h5>🏛️ 丁日昌与洋务</h5>
+            <p>丁日昌是揭阳人，清代洋务运动重要人物。他创办江南制造局、轮船招商局，是中国近代工业的奠基人之一。其故居至今保存完好。</p>
+          </div>
+          <div class="story-card">
+            <h5>🍜 粿条的故事</h5>
+            <p>揭阳粿条是潮汕美食的代表。榕城东门粿条、新亨粿条各有特色。一碗粿条，承载着揭阳人的乡愁与记忆。</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="route-section" id="section-r1">
+      <div class="route-header" onclick="toggleRoute('r1')">
+        <div class="route-label">
+          <div class="route-dot" style="background:var(--route1)"></div>
+          <div class="route-title">① 古城文化漫步</div>
+        </div>
+        <div class="route-meta">全程约 2.5km · 纯步行 · 建议 3小时</div>
+      </div>
+      <div class="stations" id="stations-r1">
+        <div class="station-item" onclick="focusStation('r1',0)">
+          <div class="station-num" style="background:var(--route1)">1</div>
+          <div class="station-info">
+            <div class="station-name">进贤门</div>
+            <div class="station-note">明代天启年间城楼，揭阳古城地标，红墙绿瓦极具韵味</div>
+            <div class="station-duration">⏱ 建议 30分钟 · 免费</div>
+          </div>
+        </div>
+        <div class="station-item" onclick="focusStation('r1',1)">
+          <div class="station-num" style="background:var(--route1)">2</div>
+          <div class="station-info">
+            <div class="station-name">揭阳学宫</div>
+            <div class="station-note">岭南地区规模最大、保存最完整的孔庙，红墙黄瓦</div>
+            <div class="station-duration">⏱ 建议 1小时 · 免费</div>
+          </div>
+        </div>
+        <div class="station-item" onclick="focusStation('r1',2)">
+          <div class="station-num" style="background:var(--route1)">3</div>
+          <div class="station-info">
+            <div class="station-name">禁城（明代城墙）</div>
+            <div class="station-note">揭阳古城墙遗址，见证800年城市历史</div>
+            <div class="station-duration">⏱ 建议 30分钟 · 免费</div>
+          </div>
+        </div>
+        <div class="station-item" onclick="focusStation('r1',3)">
+          <div class="station-num" style="background:var(--route1)">4</div>
+          <div class="station-info">
+            <div class="station-name">中山路骑楼街</div>
+            <div class="station-note">百年骑楼老街，传统商铺林立，市井气息浓厚</div>
+            <div class="station-duration">⏱ 建议 1小时 · 免费</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="route-section" id="section-r2">
+      <div class="route-header" onclick="toggleRoute('r2')">
+        <div class="route-label">
+          <div class="route-dot" style="background:var(--route2)"></div>
+          <div class="route-title">② 宗教古迹巡礼</div>
+        </div>
+        <div class="route-meta">全程约 2km · 纯步行 · 建议 2.5小时</div>
+      </div>
+      <div class="stations" id="stations-r2" style="display:none">
+        <div class="station-item" onclick="focusStation('r2',0)">
+          <div class="station-num" style="background:var(--route2)">1</div>
+          <div class="station-info">
+            <div class="station-name">城隍庙</div>
+            <div class="station-note">广东省规模最大的城隍庙，建筑精美，香火鼎盛</div>
+            <div class="station-duration">⏱ 建议 1小时 · 免费</div>
+          </div>
+        </div>
+        <div class="station-item" onclick="focusStation('r2',1)">
+          <div class="station-num" style="background:var(--route2)">2</div>
+          <div class="station-info">
+            <div class="station-name">雷神庙</div>
+            <div class="station-note">明代建筑，与城隍庙相邻，同为古城重要庙宇</div>
+            <div class="station-duration">⏱ 建议 30分钟 · 免费</div>
+          </div>
+        </div>
+        <div class="station-item" onclick="focusStation('r2',2)">
+          <div class="station-num" style="background:var(--route2)">3</div>
+          <div class="station-info">
+            <div class="station-name">双峰寺</div>
+            <div class="station-note">潮汕三大名刹之一，佛教文化圣地</div>
+            <div class="station-duration">⏱ 建议 1小时 · 免费</div>
+          </div>
+        </div>
+        <div class="station-item" onclick="focusStation('r2',3)">
+          <div class="station-num" style="background:var(--route2)">4</div>
+          <div class="station-info">
+            <div class="station-name">丁日昌故居</div>
+            <div class="station-note">清代洋务大臣故居，了解近代工业先驱生平</div>
+            <div class="station-duration">⏱ 建议 1小时 · 免费</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="route-section" id="section-r3">
+      <div class="route-header" onclick="toggleRoute('r3')">
+        <div class="route-label">
+          <div class="route-dot" style="background:var(--route3)"></div>
+          <div class="route-title">③ 美食探索之旅</div>
+        </div>
+        <div class="route-meta">全程约 1.5km · 纯步行 · 建议 2小时</div>
+      </div>
+      <div class="stations" id="stations-r3" style="display:none">
+        <div class="station-item" onclick="focusStation('r3',0)">
+          <div class="station-num" style="background:var(--route3)">1</div>
+          <div class="station-info">
+            <div class="station-name">东门粿条</div>
+            <div class="station-note">揭阳最负盛名的粿条店，汤鲜味美，早餐首选</div>
+            <div class="station-duration">⏱ 建议 40分钟 · 人均¥15-25</div>
+          </div>
+        </div>
+        <div class="station-item" onclick="focusStation('r3',1)">
+          <div class="station-num" style="background:var(--route3)">2</div>
+          <div class="station-info">
+            <div class="station-name">城隍庙小吃街</div>
+            <div class="station-note">蚝烙、无米粿、咸水粿、反沙芋头，潮汕小吃云集</div>
+            <div class="station-duration">⏱ 建议 1小时 · 人均¥20-40</div>
+          </div>
+        </div>
+        <div class="station-item" onclick="focusStation('r3',2)">
+          <div class="station-num" style="background:var(--route3)">3</div>
+          <div class="station-info">
+            <div class="station-name">卢前夜市</div>
+            <div class="station-note">揭阳最热闹的夜市，肠粉、牛肉火锅、海鲜大排档</div>
+            <div class="station-duration">⏱ 建议 1.5小时 · 人均¥50-80</div>
+          </div>
+        </div>
+        <div class="station-item" onclick="focusStation('r3',3)">
+          <div class="station-num" style="background:var(--route3)">4</div>
+          <div class="station-info">
+            <div class="station-name">功夫茶体验</div>
+            <div class="station-note">凤凰单丛、鸭屎香，体验正宗潮汕茶艺</div>
+            <div class="station-duration">⏱ 建议 1小时 · 人均¥30-60</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="route-section" id="section-r4">
+      <div class="route-header" onclick="toggleRoute('r4')">
+        <div class="route-label">
+          <div class="route-dot" style="background:var(--route4)"></div>
+          <div class="route-title">④ 山水风光游</div>
+        </div>
+        <div class="route-meta">需乘车前往 · 建议 半天至一天</div>
+      </div>
+      <div class="stations" id="stations-r4" style="display:none">
+        <div class="station-item" onclick="focusStation('r4',0)">
+          <div class="station-num" style="background:var(--route4)">1</div>
+          <div class="station-info">
+            <div class="station-name">黄岐山</div>
+            <div class="station-note">市区绿肺，登高俯瞰揭阳全景，山上有岐山塔</div>
+            <div class="station-duration">⏱ 建议 2小时 · 免费</div>
+          </div>
+        </div>
+        <div class="station-item" onclick="focusStation('r4',1)">
+          <div class="station-num" style="background:var(--route4)">2</div>
+          <div class="station-info">
+            <div class="station-name">西湖公园</div>
+            <div class="station-note">岭南园林风格，湖光山色，市民休闲好去处</div>
+            <div class="station-duration">⏱ 建议 1小时 · 免费</div>
+          </div>
+        </div>
+        <div class="station-item" onclick="focusStation('r4',2)">
+          <div class="station-num" style="background:var(--route4)">3</div>
+          <div class="station-info">
+            <div class="station-name">黄满寨瀑布</div>
+            <div class="station-note">岭南第一瀑，五级瀑布群，需乘车前往揭西</div>
+            <div class="station-duration">⏱ 建议 3小时 · 门票¥80</div>
+          </div>
+        </div>
+        <div class="station-item" onclick="focusStation('r4',3)">
+          <div class="station-num" style="background:var(--route4)">4</div>
+          <div class="station-info">
+            <div class="station-name">榕江滨江带</div>
+            <div class="station-note">沿江步道，欣赏母亲河风光，夜景迷人</div>
+            <div class="station-duration">⏱ 建议 1小时 · 免费</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="food-section">
+      <div class="food-title">🍜 揭阳必吃美食速查</div>
+      <div class="food-grid">
+        <div class="food-item">
+          <div class="food-name">揭阳粿条</div>
+          <div class="food-loc">📍 东门粿条、榕城各店</div>
+        </div>
+        <div class="food-item">
+          <div class="food-name">蚝烙</div>
+          <div class="food-loc">📍 城隍庙周边</div>
+        </div>
+        <div class="food-item">
+          <div class="food-name">无米粿</div>
+          <div class="food-loc">📍 老城区小吃摊</div>
+        </div>
+        <div class="food-item">
+          <div class="food-name">反沙芋头</div>
+          <div class="food-loc">📍 中山路各店</div>
+        </div>
+        <div class="food-item">
+          <div class="food-name">牛肉火锅</div>
+          <div class="food-loc">📍 卢前夜市</div>
+        </div>
+        <div class="food-item">
+          <div class="food-name">功夫茶</div>
+          <div class="food-loc">📍 各茶馆、茶庄</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="tips-section">
+      <div class="tips-title">📌 揭阳出行贴士</div>
+      <div class="tip-item">揭阳古城景点集中，适合步行游览</div>
+      <div class="tip-item">进贤门、学宫、城隍庙相距不远，可串联游览</div>
+      <div class="tip-item">黄满寨瀑布距市区较远，建议包车或自驾</div>
+      <div class="tip-item">正月「行彩桥」期间游客众多，需提前规划</div>
+      <div class="tip-item">潮汕话较难懂，但年轻人普遍会普通话</div>
+      <div class="tip-item">最佳游览季：3-5月、9-11月，避开梅雨</div>
+    </div>
+
+  </div>
+</div>
+
+<a href="https://github.com/zljie/citywalk-planner-skill" class="github-link" target="_blank">
+  <svg height="16" viewBox="0 0 16 16" width="16" fill="currentColor">
+    <path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"/>
+  </svg>
+  查看源码
+</a>
+
+<script>
+var routeData = {
+  r1: {
+    name: '古城文化漫步',
+    color: '#8b6914',
+    center: [23.5350, 116.3550],
+    zoom: 15,
+    stations: [
+      { name: '进贤门', lat: 23.5350, lng: 116.3550, note: '明代城楼地标' },
+      { name: '揭阳学宫', lat: 23.5360, lng: 116.3560, note: '岭南最大孔庙' },
+      { name: '禁城', lat: 23.5340, lng: 116.3570, note: '明代古城墙' },
+      { name: '中山路', lat: 23.5330, lng: 116.3540, note: '骑楼老街' }
+    ]
+  },
+  r2: {
+    name: '宗教古迹巡礼',
+    color: '#c9a227',
+    center: [23.5360, 116.3580],
+    zoom: 15,
+    stations: [
+      { name: '城隍庙', lat: 23.5365, lng: 116.3580, note: '广东最大城隍庙' },
+      { name: '雷神庙', lat: 23.5370, lng: 116.3585, note: '明代建筑' },
+      { name: '双峰寺', lat: 23.5380, lng: 116.3590, note: '潮汕三大名刹' },
+      { name: '丁日昌故居', lat: 23.5345, lng: 116.3600, note: '洋务大臣故居' }
+    ]
+  },
+  r3: {
+    name: '美食探索之旅',
+    color: '#2e5a4c',
+    center: [23.5370, 116.3560],
+    zoom: 15,
+    stations: [
+      { name: '东门粿条', lat: 23.5375, lng: 116.3555, note: '最负盛名粿条' },
+      { name: '城隍庙小吃', lat: 23.5365, lng: 116.3580, note: '潮汕小吃云集' },
+      { name: '卢前夜市', lat: 23.5400, lng: 116.3600, note: '最热闹夜市' },
+      { name: '功夫茶体验', lat: 23.5380, lng: 116.3570, note: '潮汕茶艺' }
+    ]
+  },
+  r4: {
+    name: '山水风光游',
+    color: '#6b4c6b',
+    center: [23.5500, 116.3650],
+    zoom: 13,
+    stations: [
+      { name: '黄岐山', lat: 23.5500, lng: 116.3650, note: '市区绿肺' },
+      { name: '西湖公园', lat: 23.5450, lng: 116.3500, note: '岭南园林' },
+      { name: '黄满寨瀑布', lat: 23.6500, lng: 116.1000, note: '岭南第一瀑' },
+      { name: '榕江滨江', lat: 23.5400, lng: 116.3700, note: '沿江风光' }
+    ]
+  }
+};
+
+var activeRoute = 'r1';
+var map = null;
+var routeLayers = {};
+var markers = {};
+
+function gcj02ToWgs84(lat, lng) {
+  var a = 6378245.0;
+  var ee = 0.00669342162296594323;
+  
+  function transformLat(lng, lat) {
+    var ret = -100.0 + 2.0 * lng + 3.0 * lat + 0.2 * lat * lat + 0.1 * lng * lat + 0.2 * Math.sqrt(Math.abs(lng));
+    ret += (20.0 * Math.sin(6.0 * lng * Math.PI) + 20.0 * Math.sin(2.0 * lng * Math.PI)) * 2.0 / 3.0;
+    ret += (20.0 * Math.sin(lat * Math.PI) + 40.0 * Math.sin(lat / 3.0 * Math.PI)) * 2.0 / 3.0;
+    ret += (160.0 * Math.sin(lat / 12.0 * Math.PI) + 320 * Math.sin(lat * Math.PI / 30.0)) * 2.0 / 3.0;
+    return ret;
+  }
+  
+  function transformLng(lng, lat) {
+    var ret = 300.0 + lng + 2.0 * lat + 0.1 * lng * lng + 0.1 * lng * lat + 0.1 * Math.sqrt(Math.abs(lng));
+    ret += (20.0 * Math.sin(6.0 * lng * Math.PI) + 20.0 * Math.sin(2.0 * lng * Math.PI)) * 2.0 / 3.0;
+    ret += (20.0 * Math.sin(lng * Math.PI) + 40.0 * Math.sin(lng / 3.0 * Math.PI)) * 2.0 / 3.0;
+    ret += (150.0 * Math.sin(lng / 12.0 * Math.PI) + 300.0 * Math.sin(lng / 30.0 * Math.PI)) * 2.0 / 3.0;
+    return ret;
+  }
+  
+  var dlat = transformLat(lng - 105.0, lat - 35.0);
+  var dlng = transformLng(lng - 105.0, lat - 35.0);
+  var radlat = lat / 180.0 * Math.PI;
+  var magic = Math.sin(radlat);
+  magic = 1 - ee * magic * magic;
+  var sqrtmagic = Math.sqrt(magic);
+  dlat = (dlat * 180.0) / ((a * (1 - ee)) / (magic * sqrtmagic) * Math.PI);
+  dlng = (dlng * 180.0) / (a / sqrtmagic * Math.cos(radlat) * Math.PI);
+  
+  return [lat - dlat, lng - dlng];
+}
+
+function initMap() {
+  var data = routeData[activeRoute];
+  var centerWgs = gcj02ToWgs84(data.center[0], data.center[1]);
+  
+  map = L.map('map-container', {
+    center: centerWgs,
+    zoom: data.zoom,
+    zoomControl: true
+  });
+
+  L.tileLayer('https://webrd0{s}.is.autonavi.com/appmaptile?lang=zh_cn&size=1&scale=1&style=8&x={x}&y={y}&z={z}', {
+    subdomains: '1234',
+    attribution: '&copy; 高德地图'
+  }).addTo(map);
+
+  Object.keys(routeData).forEach(function(key) {
+    buildRouteLayer(key);
+  });
+
+  showRoute(activeRoute);
+}
+
+function buildRouteLayer(routeKey) {
+  var rd = routeData[routeKey];
+  var color = rd.color;
+  
+  var routeMarkers = [];
+  rd.stations.forEach(function(s, i) {
+    var wgs = gcj02ToWgs84(s.lat, s.lng);
+    var icon = createNumberedIcon(i + 1, color);
+    
+    var marker = L.marker(wgs, { icon: icon })
+      .bindPopup('<b style="color:' + color + '">' + s.name + '</b><br>' + s.note);
+    
+    marker.on('click', function() {
+      highlightStation(routeKey, i);
+    });
+    
+    routeMarkers.push(marker);
+  });
+
+  var latlngs = rd.stations.map(function(s) {
+    return gcj02ToWgs84(s.lat, s.lng);
+  });
+  
+  var polyline = L.polyline(latlngs, {
+    color: color,
+    weight: 4,
+    opacity: 0.8,
+    dashArray: null
+  });
+
+  var layerGroup = L.layerGroup([polyline, ...routeMarkers]);
+  routeLayers[routeKey] = layerGroup;
+  markers[routeKey] = routeMarkers;
+}
+
+function createNumberedIcon(num, color) {
+  var svg = '<svg xmlns="http://www.w3.org/2000/svg" width="32" height="40" viewBox="0 0 32 40">' +
+    '<path d="M16 38C16 38 4 24 4 14C4 7.373 9.373 2 16 2C22.627 2 28 7.373 28 14C28 24 16 38 16 38Z" fill="' + color + '" stroke="white" stroke-width="2"/>' +
+    '<circle cx="16" cy="14" r="6" fill="white"/>' +
+    '<text x="16" y="17" text-anchor="middle" font-size="10" font-weight="bold" fill="' + color + '" font-family="sans-serif">' + num + '</text>' +
+    '</svg>';
+  
+  return L.divIcon({
+    html: svg,
+    className: 'custom-pin',
+    iconSize: [32, 40],
+    iconAnchor: [16, 38],
+    popupAnchor: [0, -36]
+  });
+}
+
+function showRoute(routeKey) {
+  if (routeLayers[routeKey]) {
+    routeLayers[routeKey].addTo(map);
+  }
+  
+  var rd = routeData[routeKey];
+  var bounds = rd.stations.map(function(s) {
+    return gcj02ToWgs84(s.lat, s.lng);
+  });
+  map.fitBounds(bounds, { padding: [50, 50], maxZoom: 15 });
+}
+
+function hideRoute(routeKey) {
+  if (routeLayers[routeKey]) {
+    map.removeLayer(routeLayers[routeKey]);
+  }
+}
+
+function switchRoute(routeKey) {
+  if (activeRoute === routeKey) return;
+  
+  hideRoute(activeRoute);
+  
+  activeRoute = routeKey;
+  showRoute(routeKey);
+  
+  var tabs = document.querySelectorAll('.route-tab');
+  tabs.forEach(function(tab) {
+    var isActive = tab.dataset.route === routeKey;
+    tab.classList.toggle('active', isActive);
+    if (isActive) {
+      tab.style.background = routeData[routeKey].color;
+      tab.style.color = 'white';
+    } else {
+      tab.style.background = 'white';
+      tab.style.color = '#7a6a5a';
+    }
+  });
+}
+
+function toggleRoute(routeKey) {
+  switchRoute(routeKey);
+  
+  Object.keys(routeData).forEach(function(key) {
+    var el = document.getElementById('stations-' + key);
+    if (el) el.style.display = key === routeKey ? 'block' : 'none';
+  });
+  
+  var section = document.getElementById('section-' + routeKey);
+  if (section) section.scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+function highlightStation(routeKey, index) {
+  switchRoute(routeKey);
+  
+  Object.keys(routeData).forEach(function(key) {
+    var el = document.getElementById('stations-' + key);
+    if (el) el.style.display = key === routeKey ? 'block' : 'none';
+  });
+  
+  var items = document.querySelectorAll('#stations-' + routeKey + ' .station-item');
+  items.forEach(function(item, i) {
+    item.classList.toggle('highlighted', i === index);
+  });
+  if (items[index]) items[index].scrollIntoView({ behavior: 'smooth', block: 'center' });
+  
+  if (markers[routeKey] && markers[routeKey][index]) {
+    markers[routeKey][index].openPopup();
+  }
+}
+
+function focusStation(routeKey, index) {
+  highlightStation(routeKey, index);
+  
+  var station = routeData[routeKey].stations[index];
+  var wgs = gcj02ToWgs84(station.lat, station.lng);
+  map.setView(wgs, 16);
+}
+
+document.getElementById('routeTabs').addEventListener('click', function(e) {
+  var tab = e.target.closest('.route-tab');
+  if (tab) toggleRoute(tab.dataset.route);
+});
+
+function switchInfoTab(tabElement, contentId) {
+  var tabs = document.querySelectorAll('.info-tab');
+  tabs.forEach(function(tab) {
+    tab.classList.remove('active');
+  });
+  tabElement.classList.add('active');
+  
+  var contents = document.querySelectorAll('.info-content');
+  contents.forEach(function(content) {
+    content.classList.remove('active');
+  });
+  document.getElementById('info-' + contentId).classList.add('active');
+}
+
+window.addEventListener('load', initMap);
+
+document.getElementById('stations-r1').style.display = 'block';
+</script>
+</body>
+</html>
