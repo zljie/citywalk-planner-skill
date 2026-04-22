@@ -417,6 +417,150 @@ body {
   z-index: 10;
 }
 
+/* ── 城市信息模块 ── */
+.city-info-section {
+  padding: 20px;
+  border-bottom: 1px solid var(--border);
+}
+
+.info-tabs {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 16px;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+.info-tabs::-webkit-scrollbar { display: none; }
+
+.info-tab {
+  padding: 6px 14px;
+  border-radius: 16px;
+  border: 1px solid var(--border);
+  font-size: 12px;
+  cursor: pointer;
+  white-space: nowrap;
+  background: white;
+  color: var(--muted);
+  transition: all 0.2s;
+}
+.info-tab:hover { border-color: var(--terracotta); color: var(--terracotta); }
+.info-tab.active {
+  background: var(--terracotta);
+  color: white;
+  border-color: var(--terracotta);
+}
+
+.info-content {
+  display: none;
+}
+.info-content.active {
+  display: block;
+  animation: fadeIn 0.3s ease;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.info-card {
+  background: white;
+  border-radius: 12px;
+  padding: 16px;
+  border: 1px solid var(--border);
+  margin-bottom: 12px;
+}
+
+.info-card h4 {
+  font-family: 'Noto Serif SC', serif;
+  font-size: 14px;
+  color: var(--warm-dark);
+  margin-bottom: 10px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.info-card p {
+  font-size: 13px;
+  color: var(--muted);
+  line-height: 1.8;
+}
+
+.info-card ul {
+  font-size: 13px;
+  color: var(--muted);
+  line-height: 1.8;
+  padding-left: 16px;
+}
+
+.info-card li {
+  margin-bottom: 6px;
+}
+
+.highlight-box {
+  background: linear-gradient(135deg, var(--sand) 0%, #f0ece4 100%);
+  border-left: 3px solid var(--terracotta);
+  padding: 12px 16px;
+  border-radius: 0 8px 8px 0;
+  margin: 12px 0;
+}
+
+.highlight-box p {
+  font-size: 12px;
+  color: var(--warm-dark);
+  line-height: 1.7;
+}
+
+.story-grid {
+  display: grid;
+  gap: 12px;
+}
+
+.story-card {
+  background: white;
+  border-radius: 12px;
+  padding: 16px;
+  border: 1px solid var(--border);
+}
+
+.story-card h5 {
+  font-size: 13px;
+  color: var(--terracotta);
+  margin-bottom: 8px;
+  font-weight: 600;
+}
+
+.story-card p {
+  font-size: 12px;
+  color: var(--muted);
+  line-height: 1.7;
+}
+
+.landmark-list {
+  display: grid;
+  gap: 10px;
+}
+
+.landmark-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px 12px;
+  background: var(--sand);
+  border-radius: 8px;
+}
+
+.landmark-item strong {
+  font-size: 13px;
+  color: var(--warm-dark);
+}
+
+.landmark-item span {
+  font-size: 11px;
+  color: var(--muted);
+}
+
 /* ── 响应式 ── */
 @media (max-width: 768px) {
   .main { flex-direction: column; }
@@ -793,6 +937,138 @@ body {
       <div class="tip-item">人均300-500元/天（不含住宿），牛肉火锅较贵但值得</div>
       <div class="tip-item">五一期间小公园人流量大，注意保管财物；吃生腌要量力而行</div>
     </div>
+
+    <!-- 城市探索 -->
+    <div class="city-info-section">
+      <div class="info-tabs">
+        <div class="info-tab active" onclick="switchInfoTab(this, 'history')">📜 人文历史</div>
+        <div class="info-tab" onclick="switchInfoTab(this, 'admin')">🏛️ 行政划分</div>
+        <div class="info-tab" onclick="switchInfoTab(this, 'landmarks')">🏯 名胜古迹</div>
+        <div class="info-tab" onclick="switchInfoTab(this, 'stories')">🌟 都市故事</div>
+      </div>
+
+      <!-- 人文历史 -->
+      <div class="info-content active" id="info-history">
+        <div class="info-card">
+          <h4>🕰️ 百载商埠</h4>
+          <p>汕头，别称「鮀城」，1860年开埠，是中国近代最早对外开放的港口城市之一。作为潮汕文化的发源地，汕头承载着深厚的历史底蕴和独特的海洋文化。</p>
+          <div class="highlight-box">
+            <p><strong>海丝门户</strong>：汕头自古是海上丝绸之路的重要节点，明清时期已是粤东地区最大的港口，被誉为「岭东门户、华南要冲」。</p>
+          </div>
+        </div>
+        <div class="info-card">
+          <h4>🌊 侨乡文化</h4>
+          <p>汕头是中国著名侨乡，海外华侨华人超过500万，遍布世界100多个国家和地区。侨批文化是汕头独特的历史印记，2013年「侨批档案」入选联合国教科文组织《世界记忆名录》。</p>
+        </div>
+        <div class="info-card">
+          <h4>🎭 潮汕文化</h4>
+          <p>潮汕文化是中华文化的重要分支，以潮剧、潮乐、潮州木雕、潮绣、工夫茶等为代表。潮剧是中国十大戏曲剧种之一，被誉为「南国鲜花」。</p>
+        </div>
+      </div>
+
+      <!-- 行政划分 -->
+      <div class="info-content" id="info-admin">
+        <div class="info-card">
+          <h4>📍 行政区划</h4>
+          <p>汕头市是广东省地级市，下辖6区1县：</p>
+          <ul style="margin-top:10px">
+            <li><strong>金平区</strong>：老城区核心，小公园、老妈宫所在地</li>
+            <li><strong>龙湖区</strong>：新城区中心，汕头站、时代广场</li>
+            <li><strong>濠江区</strong>：礐石风景区、潮汕历史文化博览中心</li>
+            <li><strong>潮阳区</strong>：海门莲花峰、文光塔</li>
+            <li><strong>潮南区</strong>：纺织重镇，红场革命旧址</li>
+            <li><strong>澄海区</strong>：玩具之都，陈慈黉故居</li>
+            <li><strong>南澳县</strong>：广东唯一海岛县，北回归线穿过</li>
+          </ul>
+        </div>
+        <div class="info-card">
+          <h4>🌆 城市格局</h4>
+          <p>汕头位于广东省东部，韩江三角洲南端，濒临南海。城市依海而建，内海湾将市区分为南北两岸，形成「一湾两岸」的独特格局。</p>
+        </div>
+        <div class="info-card">
+          <h4>📊 基本数据</h4>
+          <ul>
+            <li>总面积：2,199 平方公里</li>
+            <li>常住人口：约 563 万（2023年）</li>
+            <li>GDP：约 3,158 亿元（2023年）</li>
+            <li>气候：亚热带季风气候，温暖湿润</li>
+            <li>市花：金凤花 | 市树：凤凰木</li>
+          </ul>
+        </div>
+      </div>
+
+      <!-- 名胜古迹 -->
+      <div class="info-content" id="info-landmarks">
+        <div class="info-card">
+          <h4>🏛️ 必游古迹</h4>
+          <div class="landmark-list">
+            <div class="landmark-item">
+              <strong>小公园</strong>
+              <span>放射状骑楼街区</span>
+            </div>
+            <div class="landmark-item">
+              <strong>老妈宫</strong>
+              <span>清代天后宫</span>
+            </div>
+            <div class="landmark-item">
+              <strong>陈慈黉故居</strong>
+              <span>岭南第一侨宅</span>
+            </div>
+            <div class="landmark-item">
+              <strong>南澳岛</strong>
+              <span>广东最美海岛</span>
+            </div>
+            <div class="landmark-item">
+              <strong>礐石风景区</strong>
+              <span>4A级景区</span>
+            </div>
+            <div class="landmark-item">
+              <strong>开埠文化陈列馆</strong>
+              <span>近代开埠见证</span>
+            </div>
+          </div>
+        </div>
+        <div class="info-card">
+          <h4>🏺 文化场馆</h4>
+          <ul>
+            <li><strong>汕头市博物馆</strong>：馆藏文物近万件，展示潮汕历史文化</li>
+            <li><strong>潮汕历史文化博览中心</strong>：现代建筑地标，非遗展示</li>
+            <li><strong>侨批文物馆</strong>：世界记忆遗产，华侨历史见证</li>
+            <li><strong>汕头开埠文化陈列馆</strong>：三层欧陆式建筑，开埠历史</li>
+          </ul>
+        </div>
+      </div>
+
+      <!-- 都市故事 -->
+      <div class="info-content" id="info-stories">
+        <div class="story-grid">
+          <div class="story-card">
+            <h5>🥩 牛肉火锅的传奇</h5>
+            <p>汕头牛肉火锅讲究「鲜」字，从屠宰到上桌不超过3小时。当地人将牛肉细分为脖仁、吊龙、匙柄、五花趾等十余个部位，每个部位涮烫时间精确到秒。杏花吴记、八合里等老店，让汕头成为「中国牛肉火锅之都」。</p>
+          </div>
+          <div class="story-card">
+            <h5>🍵 工夫茶的讲究</h5>
+            <p>「工夫」在潮汕话中是「讲究」的意思。潮汕工夫茶有「高冲低洒、刮沫淋盖、关公巡城、韩信点兵」等二十一式。茶具必用宜兴紫砂壶、潮州朱泥壶，茶叶以凤凰单丛为上品。</p>
+          </div>
+          <div class="story-card">
+            <h5>🎭 潮剧的传承</h5>
+            <p>潮剧有500多年历史，是用潮汕方言演唱的古老剧种。2006年入选首批国家级非物质文化遗产。在汕头老市区，至今仍能听到茶馆里传来的潮剧唱腔，那是潮汕人割舍不下的乡音。</p>
+          </div>
+          <div class="story-card">
+            <h5>🌊 侨批的记忆</h5>
+            <p>侨批是海外华侨通过民间渠道寄回国内的家书与汇款。19世纪至20世纪中叶，数百万封侨批从东南亚寄回潮汕，维系着游子与故乡的情感纽带。2013年，「侨批档案」入选世界记忆遗产。</p>
+          </div>
+          <div class="story-card">
+            <h5>🌉 南澳大桥的奇迹</h5>
+            <p>2015年通车的南澳大桥全长11.08公里，是广东省第一座真正意义上的跨海大桥。大桥的建成结束了南澳岛与大陆只能靠轮渡往来的历史，被誉为「海上飞虹」。</p>
+          </div>
+          <div class="story-card">
+            <h5>🦐 生腌的江湖</h5>
+            <p>潮汕生腌被称为「潮汕毒药」，以虾、蟹、血蚶等海鲜用酱油、蒜蓉、辣椒等腌制而成。这种古老的保鲜方式，造就了独特的鲜美口感。虽然肠胃不好的人需谨慎尝试，但仍是老饕们必打卡的美食。</p>
+          </div>
+        </div>
+      </div>
+    </div>
   </div>
 </div>
 
@@ -971,6 +1247,17 @@ function highlightStation(route, index) {
 document.querySelectorAll('.route-tab').forEach(tab => {
   tab.addEventListener('click', () => switchRoute(tab.dataset.route));
 });
+
+// Switch Info Tab
+function switchInfoTab(tab, contentId) {
+  // Update tab styles
+  document.querySelectorAll('.info-tab').forEach(t => t.classList.remove('active'));
+  tab.classList.add('active');
+  
+  // Update content visibility
+  document.querySelectorAll('.info-content').forEach(c => c.classList.remove('active'));
+  document.getElementById('info-' + contentId).classList.add('active');
+}
 
 // Initialize
 window.onload = initMap;

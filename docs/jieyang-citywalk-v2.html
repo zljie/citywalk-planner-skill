@@ -417,6 +417,150 @@ body {
   z-index: 10;
 }
 
+/* ── 城市信息模块 ── */
+.city-info-section {
+  padding: 20px;
+  border-bottom: 1px solid var(--border);
+}
+
+.info-tabs {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 16px;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+.info-tabs::-webkit-scrollbar { display: none; }
+
+.info-tab {
+  padding: 6px 14px;
+  border-radius: 16px;
+  border: 1px solid var(--border);
+  font-size: 12px;
+  cursor: pointer;
+  white-space: nowrap;
+  background: white;
+  color: var(--muted);
+  transition: all 0.2s;
+}
+.info-tab:hover { border-color: var(--terracotta); color: var(--terracotta); }
+.info-tab.active {
+  background: var(--terracotta);
+  color: white;
+  border-color: var(--terracotta);
+}
+
+.info-content {
+  display: none;
+}
+.info-content.active {
+  display: block;
+  animation: fadeIn 0.3s ease;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.info-card {
+  background: white;
+  border-radius: 12px;
+  padding: 16px;
+  border: 1px solid var(--border);
+  margin-bottom: 12px;
+}
+
+.info-card h4 {
+  font-family: 'Noto Serif SC', serif;
+  font-size: 14px;
+  color: var(--warm-dark);
+  margin-bottom: 10px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.info-card p {
+  font-size: 13px;
+  color: var(--muted);
+  line-height: 1.8;
+}
+
+.info-card ul {
+  font-size: 13px;
+  color: var(--muted);
+  line-height: 1.8;
+  padding-left: 16px;
+}
+
+.info-card li {
+  margin-bottom: 6px;
+}
+
+.highlight-box {
+  background: linear-gradient(135deg, var(--sand) 0%, #f0ece4 100%);
+  border-left: 3px solid var(--terracotta);
+  padding: 12px 16px;
+  border-radius: 0 8px 8px 0;
+  margin: 12px 0;
+}
+
+.highlight-box p {
+  font-size: 12px;
+  color: var(--warm-dark);
+  line-height: 1.7;
+}
+
+.story-grid {
+  display: grid;
+  gap: 12px;
+}
+
+.story-card {
+  background: white;
+  border-radius: 12px;
+  padding: 16px;
+  border: 1px solid var(--border);
+}
+
+.story-card h5 {
+  font-size: 13px;
+  color: var(--terracotta);
+  margin-bottom: 8px;
+  font-weight: 600;
+}
+
+.story-card p {
+  font-size: 12px;
+  color: var(--muted);
+  line-height: 1.7;
+}
+
+.landmark-list {
+  display: grid;
+  gap: 10px;
+}
+
+.landmark-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px 12px;
+  background: var(--sand);
+  border-radius: 8px;
+}
+
+.landmark-item strong {
+  font-size: 13px;
+  color: var(--warm-dark);
+}
+
+.landmark-item span {
+  font-size: 11px;
+  color: var(--muted);
+}
+
 /* ── 响应式 ── */
 @media (max-width: 768px) {
   .main { flex-direction: column; }
@@ -781,6 +925,136 @@ body {
       <div class="tip-item">人均200-400元/天（不含住宿），比汕头便宜约30%</div>
       <div class="tip-item">古城内道路较窄，五一期间人流大；吃生腌量力而行</div>
     </div>
+
+    <!-- 城市探索 -->
+    <div class="city-info-section">
+      <div class="info-tabs">
+        <div class="info-tab active" onclick="switchInfoTab(this, 'history')">📜 人文历史</div>
+        <div class="info-tab" onclick="switchInfoTab(this, 'admin')">🏛️ 行政划分</div>
+        <div class="info-tab" onclick="switchInfoTab(this, 'landmarks')">🏯 名胜古迹</div>
+        <div class="info-tab" onclick="switchInfoTab(this, 'stories')">🌟 都市故事</div>
+      </div>
+
+      <!-- 人文历史 -->
+      <div class="info-content active" id="info-history">
+        <div class="info-card">
+          <h4>🕰️ 千年古邑</h4>
+          <p>揭阳，别称「榕城」，是潮汕文化的发祥地，有着2200多年的建置历史。秦始皇三十三年（公元前214年）设揭阳县，是潮汕地区最早的行政建制，素有「海滨邹鲁」之美誉。</p>
+          <div class="highlight-box">
+            <p><strong>潮汕之源</strong>：揭阳是潮汕文化的发源地，潮剧、潮乐、潮州木雕、工夫茶等潮汕文化元素皆源于此。历史上，汕头、潮州都曾隶属揭阳管辖。</p>
+          </div>
+        </div>
+        <div class="info-card">
+          <h4>📚 崇文重教</h4>
+          <p>揭阳自古崇文重教，揭阳学宫是岭南地区规模最大、保存最完整的孔庙。历史上出过众多进士举人，是岭南著名的「礼仪之邦」。</p>
+        </div>
+        <div class="info-card">
+          <h4>🎨 非遗重镇</h4>
+          <p>揭阳是国家级非物质文化遗产的重要传承地。揭阳木雕、阳美翡翠玉雕、潮剧、青狮、英歌舞等非遗项目闻名遐迩，被誉为「中国民间艺术之乡」。</p>
+        </div>
+      </div>
+
+      <!-- 行政划分 -->
+      <div class="info-content" id="info-admin">
+        <div class="info-card">
+          <h4>📍 行政区划</h4>
+          <p>揭阳市是广东省地级市，下辖2区1市2县：</p>
+          <ul style="margin-top:10px">
+            <li><strong>榕城区</strong>：市政府所在地，揭阳学宫、进贤门所在地</li>
+            <li><strong>揭东区</strong>：新城区，揭阳站所在地</li>
+            <li><strong>普宁市</strong>：县级市，商贸重镇，服装医药产业发达</li>
+            <li><strong>揭西县</strong>：山区县，黄满寨瀑布、京明温泉所在地</li>
+            <li><strong>惠来县</strong>：沿海县，拥有神泉港等渔港</li>
+          </ul>
+        </div>
+        <div class="info-card">
+          <h4>🌆 城市格局</h4>
+          <p>揭阳位于广东省东南部，地处潮汕平原西部，榕江穿城而过。古城位于榕江北岸，保留着完整的古城格局和大量历史建筑。</p>
+        </div>
+        <div class="info-card">
+          <h4>📊 基本数据</h4>
+          <ul>
+            <li>总面积：5,240 平方公里</li>
+            <li>常住人口：约 562 万（2023年）</li>
+            <li>GDP：约 2,265 亿元（2023年）</li>
+            <li>气候：亚热带季风气候，温暖湿润</li>
+            <li>市花：莲花 | 市树：榕树</li>
+          </ul>
+        </div>
+      </div>
+
+      <!-- 名胜古迹 -->
+      <div class="info-content" id="info-landmarks">
+        <div class="info-card">
+          <h4>🏛️ 必游古迹</h4>
+          <div class="landmark-list">
+            <div class="landmark-item">
+              <strong>揭阳学宫</strong>
+              <span>岭南最大孔庙</span>
+            </div>
+            <div class="landmark-item">
+              <strong>进贤门</strong>
+              <span>明代古城门</span>
+            </div>
+            <div class="landmark-item">
+              <strong>揭阳楼</strong>
+              <span>城市地标</span>
+            </div>
+            <div class="landmark-item">
+              <strong>城隍庙</strong>
+              <span>广东最大城隍庙</span>
+            </div>
+            <div class="landmark-item">
+              <strong>丁日昌故居</strong>
+              <span>清代洋务大臣府邸</span>
+            </div>
+            <div class="landmark-item">
+              <strong>黄满寨瀑布</strong>
+              <span>岭南第一瀑</span>
+            </div>
+          </div>
+        </div>
+        <div class="info-card">
+          <h4>🏺 文化场馆</h4>
+          <ul>
+            <li><strong>揭阳市博物馆</strong>：展示揭阳从新石器时代至今的历史</li>
+            <li><strong>潮剧艺术博物馆</strong>：潮剧历史、戏服、道具展示</li>
+            <li><strong>揭阳木雕艺术馆</strong>：国家级非遗，精细镂空技艺</li>
+            <li><strong>青狮文化馆</strong>：揭阳独有的青狮舞传承基地</li>
+          </ul>
+        </div>
+      </div>
+
+      <!-- 都市故事 -->
+      <div class="info-content" id="info-stories">
+        <div class="story-grid">
+          <div class="story-card">
+            <h5>🦁 青狮的传奇</h5>
+            <p>青狮是揭阳独有的狮舞品种，与常见的南狮不同，青狮体型更大、色彩以青黑为主。相传源于清代，融合了武术、杂技、舞蹈，是揭阳最具代表性的民间艺术。每年春节，青狮巡游是揭阳最热闹的年俗活动。</p>
+          </div>
+          <div class="story-card">
+            <h5>🪵 木雕的王国</h5>
+            <p>揭阳木雕与潮州木雕并称「潮汕木雕」，是中国四大木雕之一。以多层镂空、金碧辉煌著称，广泛应用于祠堂、庙宇、民居装饰。揭阳木雕艺人曾参与人民大会堂、故宫等国家级建筑的装饰工程。</p>
+          </div>
+          <div class="story-card">
+            <h5>💎 玉都的秘密</h5>
+            <p>阳美玉都是亚洲最大的翡翠玉器加工基地，不产玉却能「点石成金」。全国90%的中高档翡翠在这里加工交易，每年举办的玉文化节吸引全球客商。「天下玉，阳美成」成为业界共识。</p>
+          </div>
+          <div class="story-card">
+            <h5>🎭 潮剧的故乡</h5>
+            <p>潮剧源于揭阳，是用潮汕方言演唱的古老剧种。明代嘉靖年间，揭阳已有潮剧演出。2006年入选首批国家级非物质文化遗产。揭阳学宫曾是潮剧艺人的聚集地，至今仍保留着浓厚的戏曲氛围。</p>
+          </div>
+          <div class="story-card">
+            <h5>🥚 咸蛋黄的网红之路</h5>
+            <p>刘和隆后坡巷口咸蛋黄本是揭阳老街上的普通小吃，因独特的制作工艺和香酥口感，在社交媒体上意外走红。如今成为游客必打卡的网红美食，排队购买成为常态。</p>
+          </div>
+          <div class="story-card">
+            <h5>🏛️ 学宫的守护</h5>
+            <p>揭阳学宫始建于南宋绍兴十年（1140年），历经多次修缮，是岭南地区保存最完整的孔庙。抗战时期，学宫曾作为学校使用，保护了一批珍贵文物。如今仍是揭阳重要的文化地标。</p>
+          </div>
+        </div>
+      </div>
+    </div>
   </div>
 </div>
 
@@ -958,6 +1232,17 @@ function highlightStation(route, index) {
 document.querySelectorAll('.route-tab').forEach(tab => {
   tab.addEventListener('click', () => switchRoute(tab.dataset.route));
 });
+
+// Switch Info Tab
+function switchInfoTab(tab, contentId) {
+  // Update tab styles
+  document.querySelectorAll('.info-tab').forEach(t => t.classList.remove('active'));
+  tab.classList.add('active');
+  
+  // Update content visibility
+  document.querySelectorAll('.info-content').forEach(c => c.classList.remove('active'));
+  document.getElementById('info-' + contentId).classList.add('active');
+}
 
 // Initialize
 window.onload = initMap;
