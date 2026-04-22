@@ -331,6 +331,150 @@ body {
   z-index: 10;
 }
 
+/* ── 城市信息模块 ── */
+.city-info-section {
+  padding: 20px;
+  border-bottom: 1px solid var(--border);
+}
+
+.info-tabs {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 16px;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+.info-tabs::-webkit-scrollbar { display: none; }
+
+.info-tab {
+  padding: 6px 14px;
+  border-radius: 16px;
+  border: 1px solid var(--border);
+  font-size: 12px;
+  cursor: pointer;
+  white-space: nowrap;
+  background: white;
+  color: var(--muted);
+  transition: all 0.2s;
+}
+.info-tab:hover { border-color: var(--terracotta); color: var(--terracotta); }
+.info-tab.active {
+  background: var(--terracotta);
+  color: white;
+  border-color: var(--terracotta);
+}
+
+.info-content {
+  display: none;
+}
+.info-content.active {
+  display: block;
+  animation: fadeIn 0.3s ease;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.info-card {
+  background: white;
+  border-radius: 12px;
+  padding: 16px;
+  border: 1px solid var(--border);
+  margin-bottom: 12px;
+}
+
+.info-card h4 {
+  font-family: 'Noto Serif SC', serif;
+  font-size: 14px;
+  color: var(--warm-dark);
+  margin-bottom: 10px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.info-card p {
+  font-size: 13px;
+  color: var(--muted);
+  line-height: 1.8;
+}
+
+.info-card ul {
+  font-size: 13px;
+  color: var(--muted);
+  line-height: 1.8;
+  padding-left: 16px;
+}
+
+.info-card li {
+  margin-bottom: 6px;
+}
+
+.highlight-box {
+  background: linear-gradient(135deg, var(--sand) 0%, #f0ece4 100%);
+  border-left: 3px solid var(--terracotta);
+  padding: 12px 16px;
+  border-radius: 0 8px 8px 0;
+  margin: 12px 0;
+}
+
+.highlight-box p {
+  font-size: 12px;
+  color: var(--warm-dark);
+  line-height: 1.7;
+}
+
+.story-grid {
+  display: grid;
+  gap: 12px;
+}
+
+.story-card {
+  background: white;
+  border-radius: 12px;
+  padding: 16px;
+  border: 1px solid var(--border);
+}
+
+.story-card h5 {
+  font-size: 13px;
+  color: var(--terracotta);
+  margin-bottom: 8px;
+  font-weight: 600;
+}
+
+.story-card p {
+  font-size: 12px;
+  color: var(--muted);
+  line-height: 1.7;
+}
+
+.landmark-list {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+
+.landmark-item {
+  background: var(--sand);
+  padding: 10px 12px;
+  border-radius: 8px;
+  font-size: 12px;
+}
+
+.landmark-item strong {
+  color: var(--warm-dark);
+  display: block;
+  margin-bottom: 2px;
+}
+
+.landmark-item span {
+  color: var(--muted);
+  font-size: 11px;
+}
+
 /* ── 响应式 ── */
 @media (max-width: 768px) {
   .main { flex-direction: column; }
@@ -338,6 +482,7 @@ body {
   .sidebar { width: 100%; height: 50vh; border-left: none; border-top: 1px solid var(--border); }
   .topbar-title { font-size: 16px; }
   .food-grid { grid-template-columns: 1fr; }
+  .landmark-list { grid-template-columns: 1fr; }
 }
 
 /* ── GitHub Pages 链接 ── */
@@ -392,6 +537,164 @@ body {
         <span class="city-tag">🧋 茶颜悦色</span>
         <span class="city-tag">🦞 口味虾</span>
         <span class="city-tag">🏺 马王堆</span>
+      </div>
+    </div>
+
+    <!-- 城市详细信息 -->
+    <div class="city-info-section">
+      <div class="info-tabs">
+        <div class="info-tab active" onclick="switchInfoTab(this, 'history')">📜 人文历史</div>
+        <div class="info-tab" onclick="switchInfoTab(this, 'admin')">🏛️ 行政划分</div>
+        <div class="info-tab" onclick="switchInfoTab(this, 'landmarks')">🏯 名胜古迹</div>
+        <div class="info-tab" onclick="switchInfoTab(this, 'stories')">🌟 都市故事</div>
+      </div>
+
+      <!-- 人文历史 -->
+      <div class="info-content active" id="info-history">
+        <div class="info-card">
+          <h4>🕰️ 三千年古城</h4>
+          <p>长沙，古称「潭州」，是国务院首批公布的24座历史文化名城之一。据考证，长沙建城约在公元前800年左右，距今已有3000多年历史，是中国历史上唯一一座城址不变、城名不改的城市。</p>
+          <div class="highlight-box">
+            <p><strong>楚汉名城</strong>：长沙是楚文明和湘楚文化的发源地。战国时期属楚国，秦设长沙郡，汉置长沙国。马王堆汉墓出土的素纱襌衣、T形帛画等文物，震惊世界。</p>
+          </div>
+        </div>
+        <div class="info-card">
+          <h4>📖 屈贾之乡</h4>
+          <p>屈原被流放沅湘时写下《离骚》《九歌》等不朽诗篇；贾谊任长沙王太傅期间写下《吊屈原赋》《过秦论》。「屈贾之乡」由此得名，成为湖湘文化的精神源头。</p>
+        </div>
+        <div class="info-card">
+          <h4>🎓 潇湘洙泗</h4>
+          <p>岳麓书院创办于北宋开宝九年（976年），是中国四大书院之首，享有「千年学府」美誉。朱熹、张栻在此会讲，开创「朱张会讲」的学术盛况，使长沙成为宋代学术重镇。</p>
+        </div>
+        <div class="info-card">
+          <h4>⚔️ 革命胜地</h4>
+          <p>近代以来，长沙是维新变法、辛亥革命、五四运动的重要阵地。黄兴、蔡锷、宋教仁等革命先驱从这里走出；毛泽东、蔡和森等人在橘子洲头激扬文字，指点江山。</p>
+        </div>
+      </div>
+
+      <!-- 行政划分 -->
+      <div class="info-content" id="info-admin">
+        <div class="info-card">
+          <h4>📍 行政区划</h4>
+          <p>长沙市是湖南省省会，下辖6区2县1市：</p>
+          <ul style="margin-top:10px">
+            <li><strong>芙蓉区</strong>：政治、商业中心，五一广场、IFS所在地</li>
+            <li><strong>天心区</strong>：天心阁、橘子洲头、湘江风光带</li>
+            <li><strong>岳麓区</strong>：岳麓山、岳麓书院、大学城</li>
+            <li><strong>开福区</strong>：湖南博物院、开福寺、马栏山</li>
+            <li><strong>雨花区</strong>：高铁南站、德思勤商圈</li>
+            <li><strong>望城区</strong>：雷锋故乡、铜官窑古镇</li>
+            <li><strong>长沙县</strong>：黄花机场、三一重工</li>
+            <li><strong>浏阳市</strong>：花炮之乡、秋收起义纪念地</li>
+            <li><strong>宁乡市</strong>：刘少奇故里、温泉之乡</li>
+          </ul>
+        </div>
+        <div class="info-card">
+          <h4>🌆 城市格局</h4>
+          <p>长沙呈现独特的「山水洲城」格局：</p>
+          <div class="highlight-box">
+            <p><strong>一面青山一面城</strong>：岳麓山如屏立于湘江西岸，橘子洲浮于江心，古城坐落于东岸。湘江穿城而过，形成「一江两岸」的城市风貌。</p>
+          </div>
+        </div>
+        <div class="info-card">
+          <h4>📊 基本数据</h4>
+          <ul>
+            <li>总面积：11,819 平方公里</li>
+            <li>常住人口：约 1,042 万（2023年）</li>
+            <li>GDP：约 1.43 万亿元（2023年）</li>
+            <li>气候：亚热带季风气候，四季分明</li>
+            <li>市花：杜鹃花 | 市树：香樟树</li>
+          </ul>
+        </div>
+      </div>
+
+      <!-- 名胜古迹 -->
+      <div class="info-content" id="info-landmarks">
+        <div class="info-card">
+          <h4>🏛️ 必游古迹</h4>
+          <div class="landmark-list">
+            <div class="landmark-item">
+              <strong>岳麓书院</strong>
+              <span>中国四大书院之首</span>
+            </div>
+            <div class="landmark-item">
+              <strong>橘子洲头</strong>
+              <span>天下第一洲</span>
+            </div>
+            <div class="landmark-item">
+              <strong>马王堆汉墓</strong>
+              <span>西汉文明宝库</span>
+            </div>
+            <div class="landmark-item">
+              <strong>天心阁</strong>
+              <span>古城长沙标志</span>
+            </div>
+            <div class="landmark-item">
+              <strong>开福寺</strong>
+              <span>千年古刹</span>
+            </div>
+            <div class="landmark-item">
+              <strong>贾谊故居</strong>
+              <span>湖湘文化源头</span>
+            </div>
+            <div class="landmark-item">
+              <strong>太平老街</strong>
+              <span>千年古街</span>
+            </div>
+            <div class="landmark-item">
+              <strong>爱晚亭</strong>
+              <span>中国四大名亭</span>
+            </div>
+          </div>
+        </div>
+        <div class="info-card">
+          <h4>🏺 博物馆藏</h4>
+          <ul>
+            <li><strong>湖南博物院</strong>：马王堆汉墓出土文物，辛追夫人遗体保存完好</li>
+            <li><strong>长沙博物馆</strong>：展示长沙从史前到近代的历史变迁</li>
+            <li><strong>简牍博物馆</strong>：收藏走马楼三国吴简等珍贵简牍</li>
+            <li><strong>湘绣博物馆</strong>：中国四大名绣之一的艺术殿堂</li>
+          </ul>
+        </div>
+        <div class="info-card">
+          <h4>🌳 自然风光</h4>
+          <ul>
+            <li><strong>岳麓山</strong>：海拔300.8米，自古以「岳麓之胜」闻名</li>
+            <li><strong>橘子洲</strong>：湘江中最大的洲岛，长约5公里</li>
+            <li><strong>湘江风光带</strong>：全长数十公里的滨江公园</li>
+            <li><strong>洋湖湿地公园</strong>：亚洲最大的城市湿地公园之一</li>
+          </ul>
+        </div>
+      </div>
+
+      <!-- 都市故事 -->
+      <div class="info-content" id="info-stories">
+        <div class="story-grid">
+          <div class="story-card">
+            <h5>🧋 茶颜悦色的诞生</h5>
+            <p>2013年，吕良在长沙解放西路开出第一家茶颜悦色。坚持「中茶西做」，以古风包装和「幽兰拿铁」等爆款产品，成为长沙城市名片。2020年武汉首店开业，排队8小时冲上热搜，成为现象级网红品牌。</p>
+          </div>
+          <div class="story-card">
+            <h5>🦞 文和友的市井梦</h5>
+            <p>文宾从摆地摊卖炸串起步，2019年在海信广场打造「超级文和友」，复原80年代长沙市井街景，一天排队2万桌。龙虾馆、老长沙臭豆腐、大香肠，成为游客必打卡的「时光机」。</p>
+          </div>
+          <div class="story-card">
+            <h5>📺 电视湘军的崛起</h5>
+            <p>1997年，湖南卫视《快乐大本营》开播，开创中国娱乐综艺先河。《超级女声》《天天向上》等节目风靡全国，长沙成为「娱乐之都」，马栏山成为中国传媒产业高地。</p>
+          </div>
+          <div class="story-card">
+            <h5>🌙 不夜城的密码</h5>
+            <p>长沙夜经济排名全国第三，解放西路酒吧街、东瓜山夜市、四方坪夜市灯火通明。凌晨2点的五一广场依然人流如织，「长沙人不用睡觉」成为网络热梗。</p>
+          </div>
+          <div class="story-card">
+            <h5>🎨 媒体艺术的荣耀</h5>
+            <p>2017年，长沙成为中国首座「世界媒体艺术之都」。橘子洲头的烟花秀、梅溪湖国际文化艺术中心、IFS的灯光艺术，让古老星城焕发现代魅力。</p>
+          </div>
+          <div class="story-card">
+            <h5>🍜 美食江湖的传说</h5>
+            <p>「不吃长沙臭豆腐，等于没来长沙」。火宫殿的臭豆腐始于清朝，黑色经典创新「灌汁」吃法。糖油粑粑、口味虾、刮凉粉、老长沙米粉，构成独特的湘味江湖。</p>
+          </div>
+        </div>
       </div>
     </div>
 
@@ -908,6 +1211,23 @@ document.getElementById('routeTabs').addEventListener('click', function(e) {
   var tab = e.target.closest('.route-tab');
   if (tab) toggleRoute(tab.dataset.route);
 });
+
+// ── 信息标签切换 ──
+function switchInfoTab(tabElement, contentId) {
+  // 切换标签样式
+  var tabs = document.querySelectorAll('.info-tab');
+  tabs.forEach(function(tab) {
+    tab.classList.remove('active');
+  });
+  tabElement.classList.add('active');
+  
+  // 切换内容显示
+  var contents = document.querySelectorAll('.info-content');
+  contents.forEach(function(content) {
+    content.classList.remove('active');
+  });
+  document.getElementById('info-' + contentId).classList.add('active');
+}
 
 // ── 启动 ──
 window.addEventListener('load', initMap);
