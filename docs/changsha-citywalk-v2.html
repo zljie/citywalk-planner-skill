@@ -1,0 +1,1304 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>长沙 CityWalk 路线地图 | 2026-05-01 五一特辑</title>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=Ma+Shan+Zheng&family=Noto+Serif+SC:wght@300;400;600;700&family=Noto+Sans+SC:wght@300;400;500;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --ink: #1a1410;
+  --warm-dark: #3d2b1f;
+  --terracotta: #c0522a;
+  --amber: #d4942a;
+  --sand: #f5efe6;
+  --cream: #faf7f2;
+  --sea: #2a5c6e;
+  --muted: #7a6a5a;
+  --border: #ddd0c0;
+  --route1: #c0522a;
+  --route2: #d4942a;
+  --route3: #2a5c6e;
+  --route4: #7a5c8a;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  font-family: 'Noto Sans SC', sans-serif;
+  background: var(--cream);
+  color: var(--ink);
+  height: 100vh;
+  overflow: hidden;
+}
+
+/* ── 顶部导航 ── */
+.topbar {
+  position: fixed;
+  top: 0; left: 0; right: 0;
+  height: 56px;
+  background: rgba(250,247,242,0.96);
+  backdrop-filter: blur(8px);
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  padding: 0 20px;
+  z-index: 1000;
+  gap: 10px;
+}
+
+.topbar-title {
+  font-family: 'Ma Shan Zheng', cursive;
+  font-size: 20px;
+  color: var(--terracotta);
+  margin-right: 12px;
+  white-space: nowrap;
+}
+
+.route-tabs {
+  display: flex;
+  gap: 6px;
+  overflow-x: auto;
+  scrollbar-width: none;
+  flex: 1;
+}
+.route-tabs::-webkit-scrollbar { display: none; }
+
+.route-tab {
+  padding: 5px 14px;
+  border-radius: 20px;
+  border: 1.5px solid var(--border);
+  font-size: 13px;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: all 0.2s;
+  background: white;
+  color: var(--muted);
+}
+.route-tab:hover { border-color: var(--terracotta); color: var(--terracotta); }
+.route-tab.active {
+  color: white;
+  border-color: transparent;
+}
+
+/* ── 主体布局 ── */
+.main {
+  display: flex;
+  height: 100vh;
+  padding-top: 56px;
+}
+
+/* ── 地图 ── */
+#map-container {
+  flex: 1;
+  height: 100%;
+  background: #e8e4de;
+}
+
+/* ── 侧边面板 ── */
+.sidebar {
+  width: 400px;
+  height: 100%;
+  overflow-y: auto;
+  background: var(--cream);
+  border-left: 1px solid var(--border);
+  scrollbar-width: thin;
+  scrollbar-color: var(--border) transparent;
+}
+.sidebar::-webkit-scrollbar { width: 4px; }
+.sidebar::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+
+/* ── 天气卡片 ── */
+.weather-card {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  border-radius: 16px;
+  padding: 16px 20px;
+  margin: 16px 20px;
+  color: white;
+}
+.weather-main {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 10px;
+}
+.weather-icon { font-size: 36px; }
+.weather-temp { font-size: 20px; font-weight: 600; }
+.weather-desc { font-size: 13px; opacity: 0.9; margin-top: 2px; }
+.weather-date { font-size: 12px; opacity: 0.8; margin-bottom: 10px; }
+.weather-tips { display: flex; gap: 8px; flex-wrap: wrap; }
+.tip-tag {
+  background: rgba(255,255,255,0.2);
+  padding: 4px 10px;
+  border-radius: 12px;
+  font-size: 11px;
+}
+
+/* ── 城市介绍 ── */
+.city-intro {
+  padding: 0 20px 16px;
+  border-bottom: 1px solid var(--border);
+}
+.city-name {
+  font-family: 'Ma Shan Zheng', cursive;
+  font-size: 32px;
+  color: var(--terracotta);
+}
+.city-sub {
+  font-size: 13px;
+  color: var(--muted);
+  margin-top: 4px;
+  line-height: 1.6;
+}
+.city-tags {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+  margin-top: 10px;
+}
+.city-tag {
+  padding: 3px 10px;
+  border-radius: 12px;
+  font-size: 11px;
+  background: var(--sand);
+  color: var(--warm-dark);
+  border: 1px solid var(--border);
+}
+
+/* ── 路线区块 ── */
+.route-section {
+  border-bottom: 1px solid var(--border);
+}
+
+.route-header {
+  padding: 14px 20px 10px;
+  cursor: pointer;
+  user-select: none;
+}
+.route-label {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.route-dot {
+  width: 12px; height: 12px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+.route-title {
+  font-family: 'Noto Serif SC', serif;
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--warm-dark);
+}
+.route-meta {
+  font-size: 12px;
+  color: var(--muted);
+  margin-top: 4px;
+  padding-left: 22px;
+}
+
+/* ── 天气适配标签 ── */
+.route-weather-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 10px;
+  border-radius: 12px;
+  font-size: 11px;
+  margin-top: 8px;
+  margin-left: 22px;
+}
+.route-weather-tag.rain-friendly {
+  background: #e8f5e9;
+  color: #2e7d32;
+}
+.route-weather-tag.rain-caution {
+  background: #fff3e0;
+  color: #ef6c00;
+}
+.route-weather-tag.rain-avoid {
+  background: #ffebee;
+  color: #c62828;
+}
+
+/* ── 站点列表 ── */
+.stations {
+  padding: 0 20px 14px;
+}
+
+.station-item {
+  display: flex;
+  gap: 12px;
+  padding: 10px 0;
+  cursor: pointer;
+  border-radius: 8px;
+  transition: background 0.15s;
+  padding-left: 6px;
+  padding-right: 6px;
+}
+.station-item:hover { background: var(--sand); }
+.station-item.highlighted { background: var(--sand); }
+
+.station-num {
+  width: 26px; height: 26px;
+  border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 12px;
+  font-weight: 700;
+  color: white;
+  flex-shrink: 0;
+  margin-top: 1px;
+}
+.station-info { flex: 1; }
+.station-name {
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--warm-dark);
+}
+.station-hours {
+  font-size: 11px;
+  color: var(--terracotta);
+  margin-top: 3px;
+  font-weight: 500;
+}
+.station-hours.closed {
+  color: #c00;
+  font-weight: 600;
+}
+.station-note {
+  font-size: 12px;
+  color: var(--muted);
+  margin-top: 3px;
+  line-height: 1.5;
+}
+.station-duration {
+  font-size: 11px;
+  color: var(--sea);
+  margin-top: 3px;
+  font-weight: 500;
+}
+.station-booking {
+  font-size: 11px;
+  color: #d4942a;
+  margin-top: 2px;
+  font-weight: 500;
+}
+
+/* ── 雨天备选提示 ── */
+.rain-alert {
+  background: linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%);
+  border-radius: 12px;
+  padding: 16px 20px;
+  margin: 0 20px 16px;
+  border-left: 4px solid #2196f3;
+}
+.rain-alert-title {
+  font-weight: 600;
+  color: #1565c0;
+  margin-bottom: 8px;
+}
+.rain-alert p {
+  font-size: 12px;
+  color: #424242;
+  margin-bottom: 10px;
+}
+.rain-routes { display: flex; gap: 8px; flex-wrap: wrap; }
+.rain-route-item {
+  background: white;
+  padding: 6px 12px;
+  border-radius: 16px;
+  font-size: 12px;
+  cursor: pointer;
+  border: 1px solid #90caf9;
+}
+.rain-route-item.active {
+  background: #2196f3;
+  color: white;
+  border-color: #2196f3;
+}
+
+/* ── 美食速查 ── */
+.food-section {
+  padding: 16px 20px;
+  border-bottom: 1px solid var(--border);
+}
+.food-title {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--warm-dark);
+  margin-bottom: 10px;
+}
+.food-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+.food-item {
+  padding: 8px 10px;
+  background: var(--sand);
+  border-radius: 8px;
+  font-size: 12px;
+}
+.food-name {
+  font-weight: 500;
+  color: var(--warm-dark);
+}
+.food-loc {
+  font-size: 11px;
+  color: var(--muted);
+  margin-top: 2px;
+}
+
+/* ── 交通贴士 ── */
+.tips-section {
+  padding: 16px 20px 20px;
+}
+.tips-title {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--warm-dark);
+  margin-bottom: 8px;
+}
+.tip-item {
+  font-size: 12px;
+  color: var(--muted);
+  line-height: 1.7;
+  padding-left: 12px;
+  position: relative;
+}
+.tip-item::before {
+  content: '•';
+  position: absolute;
+  left: 0;
+  color: var(--amber);
+}
+
+/* ── Leaflet 自定义样式 ── */
+.leaflet-popup-content-wrapper {
+  border-radius: 12px;
+  padding: 0;
+  overflow: hidden;
+}
+.leaflet-popup-content {
+  margin: 0;
+  padding: 14px 16px;
+  font-family: 'Noto Sans SC', sans-serif;
+  min-width: 200px;
+}
+.custom-pin {
+  background: transparent;
+  border: none;
+}
+.pin-inner {
+  width: 32px;
+  height: 40px;
+  position: relative;
+}
+.pin-shape {
+  width: 32px;
+  height: 32px;
+  border-radius: 50% 50% 50% 0;
+  transform: rotate(-45deg);
+  position: absolute;
+  top: 0;
+  left: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.3);
+}
+.pin-shape::after {
+  content: '';
+  width: 16px;
+  height: 16px;
+  background: white;
+  border-radius: 50%;
+  transform: rotate(45deg);
+}
+.pin-number {
+  position: absolute;
+  top: 6px;
+  left: 0;
+  width: 32px;
+  text-align: center;
+  font-size: 12px;
+  font-weight: 700;
+  color: white;
+  z-index: 10;
+}
+
+/* ── 城市信息模块 ── */
+.city-info-section {
+  padding: 20px;
+  border-bottom: 1px solid var(--border);
+}
+
+.info-tabs {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 16px;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+.info-tabs::-webkit-scrollbar { display: none; }
+
+.info-tab {
+  padding: 6px 14px;
+  border-radius: 16px;
+  border: 1px solid var(--border);
+  font-size: 12px;
+  cursor: pointer;
+  white-space: nowrap;
+  background: white;
+  color: var(--muted);
+  transition: all 0.2s;
+}
+.info-tab:hover { border-color: var(--terracotta); color: var(--terracotta); }
+.info-tab.active {
+  background: var(--terracotta);
+  color: white;
+  border-color: var(--terracotta);
+}
+
+.info-content {
+  display: none;
+}
+.info-content.active {
+  display: block;
+  animation: fadeIn 0.3s ease;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.info-card {
+  background: white;
+  border-radius: 12px;
+  padding: 16px;
+  border: 1px solid var(--border);
+  margin-bottom: 12px;
+}
+
+.info-card h4 {
+  font-family: 'Noto Serif SC', serif;
+  font-size: 14px;
+  color: var(--warm-dark);
+  margin-bottom: 10px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.info-card p {
+  font-size: 13px;
+  color: var(--muted);
+  line-height: 1.8;
+}
+
+.info-card ul {
+  font-size: 13px;
+  color: var(--muted);
+  line-height: 1.8;
+  padding-left: 16px;
+}
+
+.info-card li {
+  margin-bottom: 6px;
+}
+
+.highlight-box {
+  background: linear-gradient(135deg, var(--sand) 0%, #f0ece4 100%);
+  border-left: 3px solid var(--terracotta);
+  padding: 12px 16px;
+  border-radius: 0 8px 8px 0;
+  margin: 12px 0;
+}
+
+.highlight-box p {
+  font-size: 12px;
+  color: var(--warm-dark);
+  line-height: 1.7;
+}
+
+.story-grid {
+  display: grid;
+  gap: 12px;
+}
+
+.story-card {
+  background: white;
+  border-radius: 12px;
+  padding: 16px;
+  border: 1px solid var(--border);
+}
+
+.story-card h5 {
+  font-size: 13px;
+  color: var(--terracotta);
+  margin-bottom: 8px;
+  font-weight: 600;
+}
+
+.story-card p {
+  font-size: 12px;
+  color: var(--muted);
+  line-height: 1.7;
+}
+
+.landmark-list {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+
+.landmark-item {
+  background: var(--sand);
+  padding: 10px 12px;
+  border-radius: 8px;
+  font-size: 12px;
+}
+
+.landmark-item strong {
+  color: var(--warm-dark);
+  display: block;
+  margin-bottom: 2px;
+}
+
+.landmark-item span {
+  color: var(--muted);
+  font-size: 11px;
+}
+
+/* ── 响应式 ── */
+@media (max-width: 768px) {
+  .main { flex-direction: column; }
+  #map-container { height: 50vh; }
+  .sidebar { width: 100%; height: 50vh; border-left: none; border-top: 1px solid var(--border); }
+  .topbar-title { font-size: 16px; }
+  .food-grid { grid-template-columns: 1fr; }
+  .landmark-list { grid-template-columns: 1fr; }
+}
+
+/* ── GitHub Pages 链接 ── */
+.github-link {
+  position: fixed;
+  bottom: 20px;
+  right: 20px;
+  background: white;
+  padding: 10px 16px;
+  border-radius: 24px;
+  box-shadow: 0 2px 12px rgba(0,0,0,0.15);
+  font-size: 12px;
+  color: var(--warm-dark);
+  text-decoration: none;
+  z-index: 1001;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  border: 1px solid var(--border);
+}
+.github-link:hover {
+  background: var(--sand);
+}
+</style>
+</head>
+
+<body>
+<!-- ── 顶部导航 ── -->
+<div class="topbar">
+  <div class="topbar-title">🚶 长沙 CityWalk</div>
+  <div class="route-tabs" id="routeTabs">
+    <div class="route-tab active" data-route="r1" style="background:var(--route1)">① 湘江人文</div>
+    <div class="route-tab" data-route="r2">② 历史老街</div>
+    <div class="route-tab" data-route="r3">③ 文化山脉</div>
+    <div class="route-tab" data-route="r4">④ 夜味长沙</div>
+  </div>
+</div>
+
+<!-- ── 主体 ── -->
+<div class="main">
+  <div id="map-container"></div>
+  
+  <div class="sidebar" id="sidebar">
+    <!-- 天气卡片 -->
+    <div class="weather-card">
+      <div class="weather-main">
+        <span class="weather-icon">⛅</span>
+        <div class="weather-info">
+          <div class="weather-temp">28°C / 18°C</div>
+          <div class="weather-desc">多云 · 东风2级 · 空气优</div>
+        </div>
+      </div>
+      <div class="weather-date">📅 2026-05-01 五一假期访问</div>
+      <div class="weather-tips">
+        <span class="tip-tag">👕 薄长袖/短袖</span>
+        <span class="tip-tag">☂️ 带伞备用</span>
+        <span class="tip-tag">🧴 注意防晒</span>
+        <span class="tip-tag">👟 舒适步行鞋</span>
+      </div>
+    </div>
+
+    <!-- 城市介绍 -->
+    <div class="city-intro">
+      <div class="city-name">长沙</div>
+      <div class="city-sub">湖湘文化发源地 · 网红美食之都 · 千年星城<br>「独立寒秋，湘江北去，橘子洲头」</div>
+      <div class="city-tags">
+        <span class="city-tag">🏛️ 橘子洲头</span>
+        <span class="city-tag">📚 岳麓书院</span>
+        <span class="city-tag">🍜 臭豆腐</span>
+        <span class="city-tag">🧋 茶颜悦色</span>
+        <span class="city-tag">🦞 口味虾</span>
+        <span class="city-tag">🏺 马王堆</span>
+      </div>
+    </div>
+
+    <!-- 五一特别提示 -->
+    <div class="rain-alert" style="background: linear-gradient(135deg, #fff3e0 0%, #ffe0b2 100%); border-left-color: #f57c00;">
+      <div class="rain-alert-title" style="color: #e65100;">🎉 五一假期特别提示</div>
+      <p style="font-size: 12px; color: #424242; margin-bottom: 10px;">
+        五一期间景点人流较大，建议提前预约。湖南省博物馆需提前7天预约，橘子洲/岳麓山需提前3天预约。
+      </p>
+      <div class="rain-routes">
+        <span style="background: #fff; padding: 4px 10px; border-radius: 12px; font-size: 11px; border: 1px solid #ffb74d;">📅 提前预约</span>
+        <span style="background: #fff; padding: 4px 10px; border-radius: 12px; font-size: 11px; border: 1px solid #ffb74d;">⏰ 错峰出行</span>
+        <span style="background: #fff; padding: 4px 10px; border-radius: 12px; font-size: 11px; border: 1px solid #ffb74d;">🚇 地铁优先</span>
+      </div>
+    </div>
+
+    <!-- 路线1：湘江人文轴 -->
+    <div class="route-section" id="route-r1">
+      <div class="route-header" onclick="toggleRoute('r1')">
+        <div class="route-label">
+          <div class="route-dot" style="background:var(--route1)"></div>
+          <div class="route-title">① 湘江人文轴</div>
+        </div>
+        <div class="route-meta">全程约 6km · 建议 4-5 小时 · 4个站点</div>
+        <div class="route-weather-tag rain-caution">
+          ⚠️ 部分户外 · 建议上午游览
+        </div>
+      </div>
+      <div class="stations" id="stations-r1">
+        <div class="station-item" data-route="r1" data-index="0" onclick="focusStation('r1', 0)">
+          <div class="station-num" style="background:var(--route1)">1</div>
+          <div class="station-info">
+            <div class="station-name">橘子洲头</div>
+            <div class="station-hours">🕐 07:00-22:00（全年无休）</div>
+            <div class="station-booking">📱 需提前3天预约（岳麓山橘子洲旅游区公众号）</div>
+            <div class="station-note">毛泽东青年艺术雕塑、湘江风光、百米喷泉</div>
+            <div class="station-duration">⏱️ 建议 2 小时 · 可乘坐小火车</div>
+          </div>
+        </div>
+        <div class="station-item" data-route="r1" data-index="1" onclick="focusStation('r1', 1)">
+          <div class="station-num" style="background:var(--route1)">2</div>
+          <div class="station-info">
+            <div class="station-name">五一广场</div>
+            <div class="station-hours">🕐 全天开放（商业区）</div>
+            <div class="station-note">长沙最繁华商圈、黄兴路步行街起点</div>
+            <div class="station-duration">⏱️ 建议 1 小时 · 购物美食</div>
+          </div>
+        </div>
+        <div class="station-item" data-route="r1" data-index="2" onclick="focusStation('r1', 2)">
+          <div class="station-num" style="background:var(--route1)">3</div>
+          <div class="station-info">
+            <div class="station-name">IFS国金中心</div>
+            <div class="station-hours">🕐 10:00-22:00（商场）</div>
+            <div class="station-note">KAWS雕塑打卡、顶楼花园、高端购物</div>
+            <div class="station-duration">⏱️ 建议 1 小时 · 7楼雕塑花园免费</div>
+          </div>
+        </div>
+        <div class="station-item" data-route="r1" data-index="3" onclick="focusStation('r1', 3)">
+          <div class="station-num" style="background:var(--route1)">4</div>
+          <div class="station-info">
+            <div class="station-name">黄兴路步行街</div>
+            <div class="station-hours">🕐 全天开放（商业街）</div>
+            <div class="station-note">百年老街、美食聚集地、夜生活繁华</div>
+            <div class="station-duration">⏱️ 建议 1-2 小时 · 晚上更热闹</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 路线2：历史老街寻踪 -->
+    <div class="route-section" id="route-r2">
+      <div class="route-header" onclick="toggleRoute('r2')">
+        <div class="route-label">
+          <div class="route-dot" style="background:var(--route2)"></div>
+          <div class="route-title">② 历史老街寻踪</div>
+        </div>
+        <div class="route-meta">全程约 4km · 建议 5-6 小时 · 5个站点</div>
+        <div class="route-weather-tag rain-friendly">
+          ✅ 雨天友好 · 80% 可避雨
+        </div>
+      </div>
+      <div class="stations" id="stations-r2" style="display:none">
+        <div class="station-item" data-route="r2" data-index="0" onclick="focusStation('r2', 0)">
+          <div class="station-num" style="background:var(--route2)">1</div>
+          <div class="station-info">
+            <div class="station-name">天心阁</div>
+            <div class="station-hours">🕐 08:00-18:00（全年开放）</div>
+            <div class="station-note">古城长沙标志、明代城墙、登高望远</div>
+            <div class="station-duration">⏱️ 建议 1 小时 · 门票 32元</div>
+          </div>
+        </div>
+        <div class="station-item" data-route="r2" data-index="1" onclick="focusStation('r2', 1)">
+          <div class="station-num" style="background:var(--route2)">2</div>
+          <div class="station-info">
+            <div class="station-name">简牍博物馆</div>
+            <div class="station-hours closed">🕐 09:00-17:00（周一闭馆）</div>
+            <div class="station-booking">📱 免费参观，建议预约</div>
+            <div class="station-note">走马楼三国吴简、简牍文化专题</div>
+            <div class="station-duration">⏱️ 建议 1 小时 · 室内避雨好去处</div>
+          </div>
+        </div>
+        <div class="station-item" data-route="r2" data-index="2" onclick="focusStation('r2', 2)">
+          <div class="station-num" style="background:var(--route2)">3</div>
+          <div class="station-info">
+            <div class="station-name">坡子街</div>
+            <div class="station-hours">🕐 全天开放（美食街）</div>
+            <div class="station-note">火宫殿总店、向群锅饺、双燕馄饨</div>
+            <div class="station-duration">⏱️ 建议 1.5 小时 · 午餐首选</div>
+          </div>
+        </div>
+        <div class="station-item" data-route="r2" data-index="3" onclick="focusStation('r2', 3)">
+          <div class="station-num" style="background:var(--route2)">4</div>
+          <div class="station-info">
+            <div class="station-name">太平老街</div>
+            <div class="station-hours">🕐 全天开放（历史街区）</div>
+            <div class="station-note">千年古街、贾谊故居、文艺小店</div>
+            <div class="station-duration">⏱️ 建议 1.5 小时 · 拍照打卡</div>
+          </div>
+        </div>
+        <div class="station-item" data-route="r2" data-index="4" onclick="focusStation('r2', 4)">
+          <div class="station-num" style="background:var(--route2)">5</div>
+          <div class="station-info">
+            <div class="station-name">超级文和友</div>
+            <div class="station-hours">🕐 11:00-次日03:00</div>
+            <div class="station-booking">📱 建议提前取号排队</div>
+            <div class="station-note">80年代长沙市井复原、小龙虾、拍照圣地</div>
+            <div class="station-duration">⏱️ 建议 2 小时 · 晚餐+体验</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 路线3：文化山脉半日游 -->
+    <div class="route-section" id="route-r3">
+      <div class="route-header" onclick="toggleRoute('r3')">
+        <div class="route-label">
+          <div class="route-dot" style="background:var(--route3)"></div>
+          <div class="route-title">③ 文化山脉半日游</div>
+        </div>
+        <div class="route-meta">全程约 5km · 建议 5-6 小时 · 4个站点</div>
+        <div class="route-weather-tag rain-caution">
+          ⚠️ 登山户外 · 建议晴天上午
+        </div>
+      </div>
+      <div class="stations" id="stations-r3" style="display:none">
+        <div class="station-item" data-route="r3" data-index="0" onclick="focusStation('r3', 0)">
+          <div class="station-num" style="background:var(--route3)">1</div>
+          <div class="station-info">
+            <div class="station-name">岳麓书院</div>
+            <div class="station-hours">🕐 08:00-17:30（冬季至17:00）</div>
+            <div class="station-booking">📱 需购票，40元/人</div>
+            <div class="station-note">中国四大书院之首、千年学府、惟楚有材</div>
+            <div class="station-duration">⏱️ 建议 1.5 小时 · 文化底蕴深厚</div>
+          </div>
+        </div>
+        <div class="station-item" data-route="r3" data-index="1" onclick="focusStation('r3', 1)">
+          <div class="station-num" style="background:var(--route3)">2</div>
+          <div class="station-info">
+            <div class="station-name">爱晚亭</div>
+            <div class="station-hours">🕐 06:00-22:00（全年开放）</div>
+            <div class="station-booking">📱 需提前3天预约（岳麓山橘子洲旅游区公众号）</div>
+            <div class="station-note">中国四大名亭、杜牧诗境、红叶观赏</div>
+            <div class="station-duration">⏱️ 建议 30 分钟 · 拍照打卡点</div>
+          </div>
+        </div>
+        <div class="station-item" data-route="r3" data-index="2" onclick="focusStation('r3', 2)">
+          <div class="station-num" style="background:var(--route3)">3</div>
+          <div class="station-info">
+            <div class="station-name">岳麓山顶</div>
+            <div class="station-hours">🕐 06:00-22:00（全年开放）</div>
+            <div class="station-note">俯瞰长沙全景、观景台、索道/滑道</div>
+            <div class="station-duration">⏱️ 建议 1 小时 · 索道上行30元</div>
+          </div>
+        </div>
+        <div class="station-item" data-route="r3" data-index="3" onclick="focusStation('r3', 3)">
+          <div class="station-num" style="background:var(--route3)">4</div>
+          <div class="station-info">
+            <div class="station-name">湖南博物院</div>
+            <div class="station-hours closed">🕐 09:00-17:00（周一闭馆）</div>
+            <div class="station-booking">📱 需提前7天预约，每日凌晨1点放票</div>
+            <div class="station-note">马王堆汉墓、辛追夫人、素纱襌衣</div>
+            <div class="station-duration">⏱️ 建议 2-3 小时 · 五一极难预约</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 路线4：夜味长沙 -->
+    <div class="route-section" id="route-r4">
+      <div class="route-header" onclick="toggleRoute('r4')">
+        <div class="route-label">
+          <div class="route-dot" style="background:var(--route4)"></div>
+          <div class="route-title">④ 夜味长沙</div>
+        </div>
+        <div class="route-meta">全程约 3km · 建议 4-5 小时 · 4个站点</div>
+        <div class="route-weather-tag rain-friendly">
+          ✅ 雨天友好 · 室内/有遮挡
+        </div>
+      </div>
+      <div class="stations" id="stations-r4" style="display:none">
+        <div class="station-item" data-route="r4" data-index="0" onclick="focusStation('r4', 0)">
+          <div class="station-num" style="background:var(--route4)">1</div>
+          <div class="station-info">
+            <div class="station-name">火宫殿</div>
+            <div class="station-hours">🕐 11:00-21:00（餐厅）</div>
+            <div class="station-note">臭豆腐发源地、湘味小吃、民俗表演</div>
+            <div class="station-duration">⏱️ 建议 1 小时 · 坡子街总店</div>
+          </div>
+        </div>
+        <div class="station-item" data-route="r4" data-index="1" onclick="focusStation('r4', 1)">
+          <div class="station-num" style="background:var(--route4)">2</div>
+          <div class="station-info">
+            <div class="station-name">潮宗街</div>
+            <div class="station-hours">🕐 全天开放（历史街区）</div>
+            <div class="station-note">麻石老街、文艺咖啡馆、古着店</div>
+            <div class="station-duration">⏱️ 建议 1 小时 · 夜晚氛围佳</div>
+          </div>
+        </div>
+        <div class="station-item" data-route="r4" data-index="2" onclick="focusStation('r4', 2)">
+          <div class="station-num" style="background:var(--route4)">3</div>
+          <div class="station-info">
+            <div class="station-name">东瓜山夜市</div>
+            <div class="station-hours">🕐 18:00-次日02:00（夜市）</div>
+            <div class="station-note">本地人去的美食街、肉肠、紫苏桃子姜</div>
+            <div class="station-duration">⏱️ 建议 1.5 小时 · 地道长沙味</div>
+          </div>
+        </div>
+        <div class="station-item" data-route="r4" data-index="3" onclick="focusStation('r4', 3)">
+          <div class="station-num" style="background:var(--route4)">4</div>
+          <div class="station-info">
+            <div class="station-name">解放西路</div>
+            <div class="station-hours">🕐 20:00-次日04:00（酒吧街）</div>
+            <div class="station-note">长沙夜生活地标、酒吧一条街、Livehouse</div>
+            <div class="station-duration">⏱️ 建议 2 小时 · 感受不夜城</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 美食速查 -->
+    <div class="food-section">
+      <div class="food-title">🍜 美食速查（五一必吃）</div>
+      <div class="food-grid">
+        <div class="food-item">
+          <div class="food-name">🧋 茶颜悦色</div>
+          <div class="food-loc">幽兰拿铁、声声乌龙 · 全城门店</div>
+        </div>
+        <div class="food-item">
+          <div class="food-name">🦞 口味虾</div>
+          <div class="food-loc">文和友、天宝兄弟 · 夜宵首选</div>
+        </div>
+        <div class="food-item">
+          <div class="food-name">🧈 臭豆腐</div>
+          <div class="food-loc">火宫殿、黑色经典 · 坡子街</div>
+        </div>
+        <div class="food-item">
+          <div class="food-name">🍜 长沙米粉</div>
+          <div class="food-loc">公交新村、周记 · 早餐必吃</div>
+        </div>
+        <div class="food-item">
+          <div class="food-name">🥟 糖油粑粑</div>
+          <div class="food-loc">李公庙、金记 · 太平老街</div>
+        </div>
+        <div class="food-item">
+          <div class="food-name">🍢 东瓜山肉肠</div>
+          <div class="food-loc">东瓜山夜市 · 本地人最爱</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 交通贴士 -->
+    <div class="tips-section">
+      <div class="tips-title">📌 五一出行贴士</div>
+      <div class="tip-item">地铁：下载「长沙地铁」APP，五一广场、橘子洲、岳麓山均有站点</div>
+      <div class="tip-item">预约：湖南省博物馆提前7天抢票（凌晨1点放票），橘子洲/岳麓山提前3天</div>
+      <div class="tip-item">错峰：景点建议7:00-9:00或16:00后入园，避开正午人潮</div>
+      <div class="tip-item">天气：五一期间多云为主，18-28°C，带薄外套和雨具备用</div>
+      <div class="tip-item">排队：文和友、茶颜悦色热门门店需排队，可提前取号或选非景区店</div>
+      <div class="tip-item">闭馆：湖南博物院、简牍博物馆周一闭馆，五一期间可能调整请查官网</div>
+    </div>
+
+    <!-- 城市详细信息 -->
+    <div class="city-info-section">
+      <div class="info-tabs">
+        <div class="info-tab active" onclick="switchInfoTab(this, 'history')">📜 人文历史</div>
+        <div class="info-tab" onclick="switchInfoTab(this, 'admin')">🏛️ 行政划分</div>
+        <div class="info-tab" onclick="switchInfoTab(this, 'landmarks')">🏯 名胜古迹</div>
+        <div class="info-tab" onclick="switchInfoTab(this, 'stories')">🌟 都市故事</div>
+      </div>
+
+      <!-- 人文历史 -->
+      <div class="info-content active" id="info-history">
+        <div class="info-card">
+          <h4>🕰️ 三千年古城</h4>
+          <p>长沙，古称「潭州」，是国务院首批公布的24座历史文化名城之一。据考证，长沙建城约在公元前800年左右，距今已有3000多年历史，是中国历史上唯一一座城址不变、城名不改的城市。</p>
+          <div class="highlight-box">
+            <p><strong>楚汉名城</strong>：长沙是楚文明和湘楚文化的发源地。战国时期属楚国，秦设长沙郡，汉置长沙国。马王堆汉墓出土的素纱襌衣、T形帛画等文物，震惊世界。</p>
+          </div>
+        </div>
+        <div class="info-card">
+          <h4>📖 屈贾之乡</h4>
+          <p>屈原被流放沅湘时写下《离骚》《九歌》等不朽诗篇；贾谊任长沙王太傅期间写下《吊屈原赋》《过秦论》。「屈贾之乡」由此得名，成为湖湘文化的精神源头。</p>
+        </div>
+        <div class="info-card">
+          <h4>🎓 潇湘洙泗</h4>
+          <p>岳麓书院创办于北宋开宝九年（976年），是中国四大书院之首，享有「千年学府」美誉。朱熹、张栻在此会讲，开创「朱张会讲」的学术盛况，使长沙成为宋代学术重镇。</p>
+        </div>
+        <div class="info-card">
+          <h4>⚔️ 革命胜地</h4>
+          <p>近代以来，长沙是维新变法、辛亥革命、五四运动的重要阵地。黄兴、蔡锷、宋教仁等革命先驱从这里走出；毛泽东、蔡和森等人在橘子洲头激扬文字，指点江山。</p>
+        </div>
+      </div>
+
+      <!-- 行政划分 -->
+      <div class="info-content" id="info-admin">
+        <div class="info-card">
+          <h4>📍 行政区划</h4>
+          <p>长沙市是湖南省省会，下辖6区2县1市：</p>
+          <ul style="margin-top:10px">
+            <li><strong>芙蓉区</strong>：政治、商业中心，五一广场、IFS所在地</li>
+            <li><strong>天心区</strong>：天心阁、橘子洲头、湘江风光带</li>
+            <li><strong>岳麓区</strong>：岳麓山、岳麓书院、大学城</li>
+            <li><strong>开福区</strong>：湖南博物院、开福寺、马栏山</li>
+            <li><strong>雨花区</strong>：高铁南站、德思勤商圈</li>
+            <li><strong>望城区</strong>：雷锋故乡、铜官窑古镇</li>
+            <li><strong>长沙县</strong>：黄花机场、三一重工</li>
+            <li><strong>浏阳市</strong>：花炮之乡、秋收起义纪念地</li>
+            <li><strong>宁乡市</strong>：刘少奇故里、温泉之乡</li>
+          </ul>
+        </div>
+        <div class="info-card">
+          <h4>🌆 城市格局</h4>
+          <p>长沙呈现独特的「山水洲城」格局：</p>
+          <div class="highlight-box">
+            <p><strong>一面青山一面城</strong>：岳麓山如屏立于湘江西岸，橘子洲浮于江心，古城坐落于东岸。湘江穿城而过，形成「一江两岸」的城市风貌。</p>
+          </div>
+        </div>
+        <div class="info-card">
+          <h4>📊 基本数据</h4>
+          <ul>
+            <li>总面积：11,819 平方公里</li>
+            <li>常住人口：约 1,042 万（2023年）</li>
+            <li>GDP：约 1.43 万亿元（2023年）</li>
+            <li>气候：亚热带季风气候，四季分明</li>
+            <li>市花：杜鹃花 | 市树：香樟树</li>
+          </ul>
+        </div>
+      </div>
+
+      <!-- 名胜古迹 -->
+      <div class="info-content" id="info-landmarks">
+        <div class="info-card">
+          <h4>🏛️ 必游古迹</h4>
+          <div class="landmark-list">
+            <div class="landmark-item">
+              <strong>岳麓书院</strong>
+              <span>中国四大书院之首</span>
+            </div>
+            <div class="landmark-item">
+              <strong>橘子洲头</strong>
+              <span>天下第一洲</span>
+            </div>
+            <div class="landmark-item">
+              <strong>马王堆汉墓</strong>
+              <span>西汉文明宝库</span>
+            </div>
+            <div class="landmark-item">
+              <strong>天心阁</strong>
+              <span>古城长沙标志</span>
+            </div>
+            <div class="landmark-item">
+              <strong>开福寺</strong>
+              <span>千年古刹</span>
+            </div>
+            <div class="landmark-item">
+              <strong>贾谊故居</strong>
+              <span>湖湘文化源头</span>
+            </div>
+            <div class="landmark-item">
+              <strong>太平老街</strong>
+              <span>千年古街</span>
+            </div>
+            <div class="landmark-item">
+              <strong>爱晚亭</strong>
+              <span>中国四大名亭</span>
+            </div>
+          </div>
+        </div>
+        <div class="info-card">
+          <h4>🏺 博物馆藏</h4>
+          <ul>
+            <li><strong>湖南博物院</strong>：马王堆汉墓出土文物，辛追夫人遗体保存完好</li>
+            <li><strong>长沙博物馆</strong>：展示长沙从史前到近代的历史变迁</li>
+            <li><strong>简牍博物馆</strong>：收藏走马楼三国吴简等珍贵简牍</li>
+            <li><strong>湘绣博物馆</strong>：中国四大名绣之一的艺术殿堂</li>
+          </ul>
+        </div>
+        <div class="info-card">
+          <h4>🌳 自然风光</h4>
+          <ul>
+            <li><strong>岳麓山</strong>：海拔300.8米，自古以「岳麓之胜」闻名</li>
+            <li><strong>橘子洲</strong>：湘江中最大的洲岛，长约5公里</li>
+            <li><strong>湘江风光带</strong>：全长数十公里的滨江公园</li>
+            <li><strong>洋湖湿地公园</strong>：亚洲最大的城市湿地公园之一</li>
+          </ul>
+        </div>
+      </div>
+
+      <!-- 都市故事 -->
+      <div class="info-content" id="info-stories">
+        <div class="story-grid">
+          <div class="story-card">
+            <h5>🧋 茶颜悦色的诞生</h5>
+            <p>2013年，吕良在长沙解放西路开出第一家茶颜悦色。坚持「中茶西做」，以古风包装和「幽兰拿铁」等爆款产品，成为长沙城市名片。2020年武汉首店开业，排队8小时冲上热搜，成为现象级网红品牌。</p>
+          </div>
+          <div class="story-card">
+            <h5>🦞 文和友的市井梦</h5>
+            <p>文宾从摆地摊卖炸串起步，2019年在海信广场打造「超级文和友」，复原80年代长沙市井街景，一天排队2万桌。龙虾馆、老长沙臭豆腐、大香肠，成为游客必打卡的「时光机」。</p>
+          </div>
+          <div class="story-card">
+            <h5>📺 电视湘军的崛起</h5>
+            <p>1997年，湖南卫视《快乐大本营》开播，开创中国娱乐综艺先河。《超级女声》《天天向上》等节目风靡全国，长沙成为「娱乐之都」，马栏山成为中国传媒产业高地。</p>
+          </div>
+          <div class="story-card">
+            <h5>🌙 不夜城的密码</h5>
+            <p>长沙夜经济排名全国第三，解放西路酒吧街、东瓜山夜市、四方坪夜市灯火通明。凌晨2点的五一广场依然人流如织，「长沙人不用睡觉」成为网络热梗。</p>
+          </div>
+          <div class="story-card">
+            <h5>🎨 媒体艺术的荣耀</h5>
+            <p>2017年，长沙成为中国首座「世界媒体艺术之都」。橘子洲头的烟花秀、梅溪湖国际文化艺术中心、IFS的灯光艺术，让古老星城焕发现代魅力。</p>
+          </div>
+          <div class="story-card">
+            <h5>🍜 美食江湖的传说</h5>
+            <p>「不吃长沙臭豆腐，等于没来长沙」。火宫殿的臭豆腐始于清朝，黑色经典创新「灌汁」吃法。糖油粑粑、口味虾、刮凉粉、老长沙米粉，构成独特的湘味江湖。</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<a href="https://github.com/zljie/citywalk-planner-skill" class="github-link" target="_blank">
+  <svg height="16" viewBox="0 0 16 16" width="16" fill="currentColor">
+    <path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"/>
+  </svg>
+  GitHub
+</a>
+
+<script>
+// 路线数据（GCJ-02坐标）
+const routesData = {
+  r1: {
+    color: '#c0522a',
+    stations: [
+      { name: '橘子洲头', lat: 28.1715, lng: 112.9578, note: '毛泽东青年艺术雕塑' },
+      { name: '五一广场', lat: 28.1935, lng: 112.9776, note: '长沙最繁华商圈' },
+      { name: 'IFS国金中心', lat: 28.1941, lng: 112.9785, note: 'KAWS雕塑打卡' },
+      { name: '黄兴路步行街', lat: 28.1915, lng: 112.9765, note: '百年老街' }
+    ]
+  },
+  r2: {
+    color: '#d4942a',
+    stations: [
+      { name: '天心阁', lat: 28.1855, lng: 112.9855, note: '古城长沙标志' },
+      { name: '简牍博物馆', lat: 28.1865, lng: 112.9865, note: '三国吴简' },
+      { name: '坡子街', lat: 28.1910, lng: 112.9750, note: '火宫殿总店' },
+      { name: '太平老街', lat: 28.1925, lng: 112.9735, note: '千年古街' },
+      { name: '超级文和友', lat: 28.1905, lng: 112.9725, note: '80年代市井复原' }
+    ]
+  },
+  r3: {
+    color: '#2a5c6e',
+    stations: [
+      { name: '岳麓书院', lat: 28.1835, lng: 112.9430, note: '千年学府' },
+      { name: '爱晚亭', lat: 28.1845, lng: 112.9440, note: '中国四大名亭' },
+      { name: '岳麓山顶', lat: 28.1865, lng: 112.9460, note: '俯瞰长沙全景' },
+      { name: '湖南博物院', lat: 28.2050, lng: 112.9900, note: '马王堆汉墓' }
+    ]
+  },
+  r4: {
+    color: '#7a5c8a',
+    stations: [
+      { name: '火宫殿', lat: 28.1910, lng: 112.9750, note: '臭豆腐发源地' },
+      { name: '潮宗街', lat: 28.1950, lng: 112.9710, note: '麻石老街' },
+      { name: '东瓜山夜市', lat: 28.1780, lng: 112.9850, note: '本地人最爱' },
+      { name: '解放西路', lat: 28.1930, lng: 112.9790, note: '酒吧一条街' }
+    ]
+  }
+};
+
+let map;
+let currentRoute = 'r1';
+let markers = {};
+let polylines = {};
+
+// 初始化地图
+function initMap() {
+  map = L.map('map-container').setView([28.1920, 112.9750], 13);
+  
+  L.tileLayer('https://webrd0{s}.is.autonavi.com/appmaptile?lang=zh_cn&size=1&scale=1&style=8&x={x}&y={y}&z={z}', {
+    subdomains: '1234',
+    attribution: '© 高德地图'
+  }).addTo(map);
+
+  // 初始化所有路线的标记和折线
+  for (const [routeId, route] of Object.entries(routesData)) {
+    createRouteLayer(routeId, route);
+  }
+
+  // 默认显示路线1
+  showRoute('r1');
+}
+
+// 创建路线图层
+function createRouteLayer(routeId, route) {
+  const latlngs = route.stations.map(s => [s.lat, s.lng]);
+  
+  // 创建折线
+  polylines[routeId] = L.polyline(latlngs, {
+    color: route.color,
+    weight: 4,
+    opacity: 0.8,
+    dashArray: routeId === currentRoute ? null : '5, 10'
+  }).addTo(map);
+
+  // 创建标记
+  markers[routeId] = route.stations.map((station, index) => {
+    const icon = L.divIcon({
+      className: 'custom-pin',
+      html: `
+        <div class="pin-inner">
+          <div class="pin-shape" style="background:${route.color}"></div>
+          <div class="pin-number">${index + 1}</div>
+        </div>
+      `,
+      iconSize: [32, 40],
+      iconAnchor: [16, 32]
+    });
+
+    const marker = L.marker([station.lat, station.lng], { icon })
+      .addTo(map)
+      .bindPopup(`
+        <div style="font-family:Noto Sans SC,sans-serif">
+          <div style="font-weight:600;color:${route.color};font-size:14px;margin-bottom:4px">
+            ${index + 1}. ${station.name}
+          </div>
+          <div style="font-size:12px;color:#666">${station.note}</div>
+        </div>
+      `);
+    
+    marker.on('click', () => {
+      highlightStation(routeId, index);
+    });
+    
+    return marker;
+  });
+
+  // 非当前路线隐藏
+  if (routeId !== currentRoute) {
+    polylines[routeId].setStyle({ opacity: 0.3 });
+    markers[routeId].forEach(m => m.setOpacity(0.3));
+  }
+}
+
+// 切换路线
+function showRoute(routeId) {
+  currentRoute = routeId;
+  
+  // 更新所有路线的样式
+  for (const [id, polyline] of Object.entries(polylines)) {
+    if (id === routeId) {
+      polyline.setStyle({ opacity: 0.8, dashArray: null });
+      markers[id].forEach(m => m.setOpacity(1));
+    } else {
+      polyline.setStyle({ opacity: 0.2, dashArray: '5, 10' });
+      markers[id].forEach(m => m.setOpacity(0.2));
+    }
+  }
+
+  // 调整地图视野
+  const route = routesData[routeId];
+  const group = new L.featureGroup(markers[routeId]);
+  map.fitBounds(group.getBounds().pad(0.2));
+
+  // 更新UI
+  document.querySelectorAll('.route-tab').forEach(tab => {
+    if (tab.dataset.route === routeId) {
+      tab.classList.add('active');
+      tab.style.background = routesData[routeId].color;
+    } else {
+      tab.classList.remove('active');
+      tab.style.background = '';
+    }
+  });
+
+  // 展开对应路线
+  document.querySelectorAll('.stations').forEach(el => el.style.display = 'none');
+  document.getElementById(`stations-${routeId}`).style.display = 'block';
+}
+
+// 切换路线折叠
+function toggleRoute(routeId) {
+  const stationsEl = document.getElementById(`stations-${routeId}`);
+  if (stationsEl.style.display === 'none') {
+    showRoute(routeId);
+  } else {
+    stationsEl.style.display = 'none';
+  }
+}
+
+// 聚焦站点
+function focusStation(routeId, index) {
+  showRoute(routeId);
+  const station = routesData[routeId].stations[index];
+  map.setView([station.lat, station.lng], 16);
+  markers[routeId][index].openPopup();
+  highlightStation(routeId, index);
+}
+
+// 高亮站点
+function highlightStation(routeId, index) {
+  document.querySelectorAll('.station-item').forEach(el => el.classList.remove('highlighted'));
+  const item = document.querySelector(`#stations-${routeId} .station-item[data-index="${index}"]`);
+  if (item) {
+    item.classList.add('highlighted');
+    item.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  }
+}
+
+// 切换信息标签
+function switchInfoTab(tab, contentId) {
+  document.querySelectorAll('.info-tab').forEach(t => t.classList.remove('active'));
+  tab.classList.add('active');
+  
+  document.querySelectorAll('.info-content').forEach(c => c.classList.remove('active'));
+  document.getElementById(`info-${contentId}`).classList.add('active');
+}
+
+// 标签点击事件
+document.querySelectorAll('.route-tab').forEach(tab => {
+  tab.addEventListener('click', () => showRoute(tab.dataset.route));
+});
+
+// 初始化
+initMap();
+</script>
+</body>
+</html>
