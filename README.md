@@ -8,11 +8,14 @@
 
 ## ✨ 功能特性
 
-- 🗺️ **交互式地图** - 基于腾讯地图 GL API，支持路线切换、标记点击、站点详情展示
+- 🗺️ **交互式地图** - 基于 Leaflet + 高德瓦片，支持路线切换、标记点击、站点详情展示
 - 📝 **纯文字清单** - 可打印的表格化路线，适合手机截图或纸质携带
 - 🎨 **精美视觉** - 暖色调设计，响应式布局，支持桌面端和移动端
-- 📍 **坐标精确** - 支持高德/腾讯 POI API 获取精确坐标，内置坐标系转换
+- 📍 **坐标精确** - 支持高德 POI API 获取精确坐标，内置坐标系转换
 - 🔄 **多主题路线** - 支持历史文化、美食探索、自然风光、新城艺术等多种主题
+- 🌤️ **天气联动** - 根据访问日期查询天气，雨天自动推荐室内路线
+- 🕐 **开放时间** - 每个景点标注开放时间、闭馆日、预约提示
+- 🏛️ **城市探索** - 人文历史、行政划分、名胜古迹、都市故事四大模块
 
 ---
 
@@ -68,12 +71,14 @@ citywalk-planner/
 
 ## 🗺️ 输出示例
 
-### 交互地图版
-- 腾讯地图 GL 渲染
+### 交互地图版（v2.0）
+- Leaflet + 高德瓦片地图渲染
 - 多路线切换导航
 - 编号标记点 + 路线折线
 - 点击标记显示站点详情
 - 右侧站点列表联动
+- 天气卡片 + 开放时间标注
+- 城市探索模块（人文/行政/名胜/故事）
 
 ### 纯文字版
 - 表格化路线展示
@@ -86,18 +91,7 @@ citywalk-planner/
 
 ## ⚙️ 配置说明
 
-### 腾讯地图 API Key（可选但推荐）
-
-1. 访问 [腾讯位置服务](https://lbs.qq.com/) 注册账号
-2. 控制台 → 应用管理 → 创建应用 → 添加 Key
-3. 服务平台选择 "WebService API"
-4. 复制 Key 并在生成 HTML 时替换 `YOUR_KEY`
-
-> 💡 **配额说明**：
-> - WebService API：5000 次/日（用于批量坐标查询）
-> - JS API v2：10 万次/日（用于地图渲染，配额充足）
-
-### 高德地图 API Key（备选）
+### 高德地图 API Key（可选但推荐）
 
 如需使用高德 POI 获取精确坐标：
 
@@ -105,13 +99,15 @@ citywalk-planner/
 2. 创建应用 → 添加 Key（服务平台选 "Web服务"）
 3. 使用 `scripts/poi_precision.py` 批量查询坐标
 
+> 💡 **说明**：v2.0 版本统一使用 Leaflet + 高德瓦片地图，无需腾讯地图 API Key
+
 ---
 
 ## 🛠️ 技术栈
 
 | 组件 | 技术 |
 |------|------|
-| 地图引擎 | 腾讯地图 JavaScript API GL |
+| 地图引擎 | Leaflet + 高德地图瓦片 |
 | 坐标系 | GCJ-02（火星坐标系） |
 | 样式 | 原生 CSS + 暖色调设计 |
 | 字体 | Ma Shan Zheng / Noto Serif SC / Noto Sans SC |
@@ -131,6 +127,16 @@ citywalk-planner/
 
 ## 🌍 已完成城市
 
+### v2.0 版本（推荐）
+
+| 城市 | 路线数 | 特色功能 | 状态 | 在线预览 |
+|------|--------|----------|------|----------|
+| 长沙 | 4条 | 天气联动、城市探索、开放时间标注 | ✅ 完整 | [查看地图](https://zljie.github.io/citywalk-planner-skill/changsha-citywalk-v2.html) |
+| 汕头 | 4条 | 美食清单、城市探索、雨天适配 | ✅ 完整 | [查看地图](https://zljie.github.io/citywalk-planner-skill/shantou-citywalk-v2.html) |
+| 揭阳 | 4条 | 城市探索、人文历史、都市故事 | ✅ 完整 | [查看地图](https://zljie.github.io/citywalk-planner-skill/jieyang-citywalk-v2.html) |
+
+### v1.0 版本（归档）
+
 | 城市 | 路线数 | 主题覆盖 | 状态 | 在线预览 |
 |------|--------|----------|------|----------|
 | 长沙 | 4条 | 湘江人文、历史老街、文化山脉、夜味长沙 | ✅ 完整 | [查看地图](https://zljie.github.io/citywalk-planner-skill/changsha-citywalk.html) |
@@ -145,7 +151,12 @@ citywalk-planner/
 
 **🔗 首页**: https://zljie.github.io/citywalk-planner-skill/
 
-**📍 各城市直达**:
+**📍 v2.0 版本直达**:
+- [长沙 CityWalk v2.0](https://zljie.github.io/citywalk-planner-skill/changsha-citywalk-v2.html)
+- [汕头 CityWalk v2.0](https://zljie.github.io/citywalk-planner-skill/shantou-citywalk-v2.html)
+- [揭阳 CityWalk v2.0](https://zljie.github.io/citywalk-planner-skill/jieyang-citywalk-v2.html)
+
+**📍 v1.0 版本直达**:
 - [长沙 CityWalk](https://zljie.github.io/citywalk-planner-skill/changsha-citywalk.html)
 - [上海 CityWalk](https://zljie.github.io/citywalk-planner-skill/shanghai-citywalk.html)
 - [汕头 CityWalk](https://zljie.github.io/citywalk-planner-skill/shantou-citywalk.html)
@@ -174,10 +185,25 @@ citywalk-planner/
 
 ---
 
+## 📅 版本历史
+
+### v2.0（2026-04-22）
+- ✨ 全新页面结构：天气卡片 → 城市介绍 → 路线列表 → 美食速查 → 出行贴士 → 城市探索
+- ✨ 城市探索模块：人文历史、行政划分、名胜古迹、都市故事
+- ✨ 天气联动功能：根据访问日期查询天气，雨天推荐室内路线
+- ✨ 开放时间标注：每个景点显示开放时间和闭馆提示
+- ✨ 技术栈升级：统一使用 Leaflet + 高德瓦片，避免腾讯地图 API 配额限制
+
+### v1.0（2026-04-20）
+- ✅ 基础 CityWalk 路线规划
+- ✅ 交互式地图（腾讯地图 GL / Leaflet）
+- ✅ 美食速查和出行贴士
+
+---
+
 ## 🙏 致谢
 
-- 腾讯地图 API 提供地图服务
-- 高德地图 API 提供 POI 数据
+- 高德地图 API 提供地图服务和 POI 数据
 - WorkBuddy 平台提供 Skill 运行环境
 
 ---
