@@ -1,0 +1,882 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>汕头 CityWalk 路线规划 | 2026-05-01</title>
+  <link href="https://fonts.googleapis.com/css2?family=Ma+Shan+Zheng&family=Noto+Serif+SC:wght@400;600;700&family=Noto+Sans+SC:wght@300;400;500;600&display=swap" rel="stylesheet">
+  <script src="https://map.qq.com/api/gljs?v=1.exp&key=YOUR_KEY"></script>
+  <style>
+    :root {
+      --cream: #FDF8F0;
+      --terracotta: #D4756B;
+      --terracotta-light: #E8A598;
+      --amber: #F5A623;
+      --coffee: #6B4423;
+      --text: #3D3D3D;
+      --text-light: #666;
+      --border: #E8DDD4;
+      --route1: #D4756B;
+      --route2: #5B9A8B;
+      --route3: #E8A598;
+      --route4: #F5A623;
+      --route5: #8B7355;
+    }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: 'Noto Sans SC', sans-serif;
+      background: var(--cream);
+      color: var(--text);
+      line-height: 1.6;
+    }
+
+    /* Header */
+    .header {
+      background: linear-gradient(135deg, var(--terracotta) 0%, var(--terracotta-light) 100%);
+      color: white;
+      padding: 24px 20px;
+      text-align: center;
+      position: relative;
+    }
+    .header h1 {
+      font-family: 'Ma Shan Zheng', cursive;
+      font-size: 32px;
+      margin-bottom: 8px;
+      text-shadow: 2px 2px 4px rgba(0,0,0,0.2);
+    }
+    .header-subtitle {
+      font-size: 14px;
+      opacity: 0.9;
+    }
+
+    /* Weather Card */
+    .weather-card {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      border-radius: 16px;
+      padding: 16px 20px;
+      margin: 16px 20px;
+      color: white;
+      box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+    }
+    .weather-main {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 10px;
+    }
+    .weather-icon { font-size: 36px; }
+    .weather-info { flex: 1; }
+    .weather-temp { font-size: 20px; font-weight: 600; }
+    .weather-desc { font-size: 13px; opacity: 0.9; margin-top: 2px; }
+    .weather-date { font-size: 12px; opacity: 0.8; margin-bottom: 10px; }
+    .weather-tips { display: flex; gap: 8px; flex-wrap: wrap; }
+    .tip-tag {
+      background: rgba(255,255,255,0.2);
+      padding: 4px 10px;
+      border-radius: 12px;
+      font-size: 11px;
+    }
+
+    /* City Intro */
+    .city-intro {
+      background: white;
+      margin: 0 20px 16px;
+      padding: 20px;
+      border-radius: 12px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+    }
+    .city-intro h2 {
+      font-family: 'Noto Serif SC', serif;
+      font-size: 18px;
+      color: var(--terracotta);
+      margin-bottom: 12px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .city-intro p {
+      font-size: 13px;
+      color: var(--text-light);
+      line-height: 1.8;
+    }
+
+    /* Route Tabs */
+    .route-tabs {
+      display: flex;
+      gap: 8px;
+      padding: 0 20px 16px;
+      overflow-x: auto;
+      scrollbar-width: none;
+    }
+    .route-tabs::-webkit-scrollbar { display: none; }
+    .route-tab {
+      flex-shrink: 0;
+      padding: 10px 16px;
+      border-radius: 20px;
+      font-size: 13px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.3s;
+      border: 2px solid transparent;
+      background: white;
+    }
+    .route-tab.active[data-route="1"] { background: var(--route1); color: white; }
+    .route-tab.active[data-route="2"] { background: var(--route2); color: white; }
+    .route-tab.active[data-route="3"] { background: var(--route3); color: white; }
+    .route-tab.active[data-route="4"] { background: var(--route4); color: white; }
+    .route-tab:not(.active) { border-color: var(--border); color: var(--text-light); }
+
+    /* Map Container */
+    .map-wrapper {
+      margin: 0 20px 16px;
+      border-radius: 12px;
+      overflow: hidden;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+    }
+    #map { width: 100%; height: 400px; }
+
+    /* Route Panel */
+    .route-panel {
+      background: white;
+      margin: 0 20px 16px;
+      border-radius: 12px;
+      padding: 20px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+    }
+    .route-header {
+      margin-bottom: 16px;
+    }
+    .route-label {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 6px;
+    }
+    .route-dot {
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+    }
+    .route-title {
+      font-family: 'Noto Serif SC', serif;
+      font-size: 18px;
+      font-weight: 600;
+    }
+    .route-meta {
+      font-size: 12px;
+      color: var(--text-light);
+      margin-left: 22px;
+    }
+    .route-weather-tag {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      padding: 4px 10px;
+      border-radius: 12px;
+      font-size: 11px;
+      margin-top: 8px;
+      margin-left: 22px;
+    }
+    .route-weather-tag.rain-friendly {
+      background: #e8f5e9;
+      color: #2e7d32;
+    }
+    .route-weather-tag.rain-caution {
+      background: #fff3e0;
+      color: #ef6c00;
+    }
+
+    /* Station List */
+    .station-list { display: flex; flex-direction: column; gap: 12px; }
+    .station-item {
+      display: flex;
+      gap: 12px;
+      padding: 14px;
+      background: var(--cream);
+      border-radius: 10px;
+      cursor: pointer;
+      transition: all 0.2s;
+      border-left: 3px solid transparent;
+    }
+    .station-item:hover { background: #f5ebe0; }
+    .station-item.active { border-left-color: var(--terracotta); background: #fff5f0; }
+    .station-number {
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 12px;
+      font-weight: 600;
+      color: white;
+      flex-shrink: 0;
+    }
+    .station-info { flex: 1; }
+    .station-name {
+      font-weight: 600;
+      font-size: 14px;
+      margin-bottom: 2px;
+    }
+    .station-hours {
+      font-size: 11px;
+      color: var(--terracotta);
+      margin-top: 3px;
+      font-weight: 500;
+    }
+    .station-note {
+      font-size: 12px;
+      color: var(--text-light);
+      margin-top: 2px;
+    }
+    .station-duration {
+      font-size: 11px;
+      color: var(--amber);
+      margin-top: 4px;
+      font-weight: 500;
+    }
+
+    /* Route Content */
+    .route-content { display: none; }
+    .route-content.active { display: block; }
+
+    /* Food & Tips */
+    .info-section {
+      background: white;
+      margin: 0 20px 16px;
+      border-radius: 12px;
+      padding: 20px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+    }
+    .info-section h3 {
+      font-family: 'Noto Serif SC', serif;
+      font-size: 16px;
+      color: var(--terracotta);
+      margin-bottom: 14px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .food-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 10px;
+    }
+    .food-item {
+      background: var(--cream);
+      padding: 12px;
+      border-radius: 8px;
+      font-size: 12px;
+    }
+    .food-name { font-weight: 600; margin-bottom: 4px; }
+    .food-price { color: var(--terracotta); font-size: 11px; }
+
+    .tips-list {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+    .tip-item {
+      display: flex;
+      gap: 10px;
+      font-size: 13px;
+      align-items: flex-start;
+    }
+    .tip-icon { font-size: 16px; flex-shrink: 0; }
+
+    /* Footer */
+    .footer {
+      text-align: center;
+      padding: 20px;
+      font-size: 12px;
+      color: var(--text-light);
+    }
+
+    /* Holiday Alert */
+    .holiday-alert {
+      background: linear-gradient(135deg, #fff3e0 0%, #ffe0b2 100%);
+      border-radius: 12px;
+      padding: 16px 20px;
+      margin: 0 20px 16px;
+      border-left: 4px solid var(--amber);
+    }
+    .holiday-alert-title {
+      font-weight: 600;
+      color: #e65100;
+      margin-bottom: 8px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .holiday-alert ul {
+      font-size: 12px;
+      color: var(--text);
+      padding-left: 16px;
+      line-height: 1.8;
+    }
+
+    @media (min-width: 768px) {
+      .main-content { display: flex; gap: 20px; padding: 0 20px; }
+      .map-section { flex: 1.2; }
+      .panel-section { flex: 1; max-width: 420px; }
+      .map-wrapper, .route-panel, .weather-card, .city-intro, .info-section, .holiday-alert {
+        margin: 0 0 16px;
+      }
+      #map { height: 500px; }
+    }
+  </style>
+</head>
+<body>
+  <header class="header">
+    <h1>🏛️ 汕头 CityWalk</h1>
+    <div class="header-subtitle">百载商埠 · 海丝门户 · 美食之都</div>
+  </header>
+
+  <!-- Weather Card -->
+  <div class="weather-card">
+    <div class="weather-main">
+      <span class="weather-icon">⛅</span>
+      <div class="weather-info">
+        <div class="weather-temp">28°C / 24°C</div>
+        <div class="weather-desc">多云 · 东风2级 · 空气质量优</div>
+      </div>
+    </div>
+    <div class="weather-date">📅 2026-05-01 五一假期访问</div>
+    <div class="weather-tips">
+      <span class="tip-tag">👕 短袖+薄外套</span>
+      <span class="tip-tag">☂️ 带伞备用</span>
+      <span class="tip-tag">👟 舒适步行鞋</span>
+      <span class="tip-tag">🧴 注意防晒</span>
+    </div>
+  </div>
+
+  <!-- Holiday Alert -->
+  <div class="holiday-alert">
+    <div class="holiday-alert-title">🎉 五一假期特别提示</div>
+    <ul>
+      <li><strong>小公园</strong>：五一期间有灯光秀和非遗展演，建议傍晚前往</li>
+      <li><strong>老妈宫</strong>：假期人流较大，建议上午9点前到达</li>
+      <li><strong>镇邦美食街</strong>：午餐晚餐高峰期排队较长，建议错峰用餐</li>
+      <li><strong>南澳岛</strong>：节假日过桥可能拥堵，建议早7点前出发</li>
+    </ul>
+  </div>
+
+  <!-- City Intro -->
+  <div class="city-intro">
+    <h2>📍 关于汕头</h2>
+    <p>汕头是中国东南沿海重要港口城市，素有"岭东门户、华南要冲"之称。1860年开埠后成为粤东经济中心，保留大量骑楼建筑。潮汕文化发源地之一，以工夫茶、潮剧、潮菜闻名。牛肉火锅、粿条、蚝烙等美食享誉海内外。</p>
+  </div>
+
+  <!-- Route Tabs -->
+  <div class="route-tabs">
+    <div class="route-tab active" data-route="1" onclick="switchRoute(1)">老城开埠</div>
+    <div class="route-tab" data-route="2" onclick="switchRoute(2)">美食寻味</div>
+    <div class="route-tab" data-route="3" onclick="switchRoute(3)">海岛风光</div>
+    <div class="route-tab" data-route="4" onclick="switchRoute(4)">文化巡礼</div>
+  </div>
+
+  <div class="main-content">
+    <div class="map-section">
+      <div class="map-wrapper">
+        <div id="map"></div>
+      </div>
+    </div>
+
+    <div class="panel-section">
+      <!-- Route 1 -->
+      <div class="route-content active" id="route-1">
+        <div class="route-panel">
+          <div class="route-header">
+            <div class="route-label">
+              <div class="route-dot" style="background:var(--route1)"></div>
+              <div class="route-title">① 老城开埠之旅</div>
+            </div>
+            <div class="route-meta">全程约 4km · 建议 5-6 小时 · 6个站点</div>
+            <div class="route-weather-tag rain-friendly">
+              ✅ 雨天友好 · 骑楼可避雨
+            </div>
+          </div>
+          <div class="station-list">
+            <div class="station-item active" data-index="0">
+              <div class="station-number" style="background:var(--route1)">1</div>
+              <div class="station-info">
+                <div class="station-name">小公园中山纪念亭</div>
+                <div class="station-hours">🕐 全天开放</div>
+                <div class="station-note">汕头老城核心地标，放射状骑楼街区</div>
+                <div class="station-duration">⏱️ 建议 1-1.5 小时 · 免费</div>
+              </div>
+            </div>
+            <div class="station-item" data-index="1">
+              <div class="station-number" style="background:var(--route1)">2</div>
+              <div class="station-info">
+                <div class="station-name">开埠文化陈列馆</div>
+                <div class="station-hours">🕐 09:00-17:00（周一闭馆）</div>
+                <div class="station-note">展示汕头1860年开埠历史，三层欧陆式建筑</div>
+                <div class="station-duration">⏱️ 建议 1 小时 · 免费需预约</div>
+              </div>
+            </div>
+            <div class="station-item" data-index="2">
+              <div class="station-number" style="background:var(--route1)">3</div>
+              <div class="station-info">
+                <div class="station-name">老妈宫（天后宫）</div>
+                <div class="station-hours">🕐 08:00-18:00</div>
+                <div class="station-note">始建于清嘉庆年间，汕头开埠前最早的建筑</div>
+                <div class="station-duration">⏱️ 建议 30 分钟 · 免费</div>
+              </div>
+            </div>
+            <div class="station-item" data-index="3">
+              <div class="station-number" style="background:var(--route1)">4</div>
+              <div class="station-info">
+                <div class="station-name">镇邦美食街</div>
+                <div class="station-hours">🕐 10:00-22:00</div>
+                <div class="station-note">老字号美食聚集地，品尝地道潮汕小吃</div>
+                <div class="station-duration">⏱️ 建议 1.5 小时 · 人均50-80元</div>
+              </div>
+            </div>
+            <div class="station-item" data-index="4">
+              <div class="station-number" style="background:var(--route1)">5</div>
+              <div class="station-info">
+                <div class="station-name">西堤公园</div>
+                <div class="station-hours">🕐 06:00-22:00</div>
+                <div class="station-note">观赏礐石大桥日落，侨批文化墙</div>
+                <div class="station-duration">⏱️ 建议 1 小时 · 免费</div>
+              </div>
+            </div>
+            <div class="station-item" data-index="5">
+              <div class="station-number" style="background:var(--route1)">6</div>
+              <div class="station-info">
+                <div class="station-name">广场轮渡</div>
+                <div class="station-hours">🕐 06:20-20:00（每20分钟一班）</div>
+                <div class="station-note">1元体验海上日落，往返礐石风景区</div>
+                <div class="station-duration">⏱️ 建议 40 分钟 · 船票1元</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Route 2 -->
+      <div class="route-content" id="route-2">
+        <div class="route-panel">
+          <div class="route-header">
+            <div class="route-label">
+              <div class="route-dot" style="background:var(--route2)"></div>
+              <div class="route-title">② 潮汕美食寻味</div>
+            </div>
+            <div class="route-meta">全程约 3km · 建议 4-5 小时 · 6个站点</div>
+            <div class="route-weather-tag rain-friendly">
+              ✅ 雨天友好 · 全程室内/有遮挡
+            </div>
+          </div>
+          <div class="station-list">
+            <div class="station-item active" data-index="0">
+              <div class="station-number" style="background:var(--route2)">1</div>
+              <div class="station-info">
+                <div class="station-name">小吴肠粉</div>
+                <div class="station-hours">🕐 07:00-13:00（卖完即止）</div>
+                <div class="station-note">网红肠粉店，皮薄料足，早点去排队</div>
+                <div class="station-duration">⏱️ 建议 30 分钟 · 人均15-25元</div>
+              </div>
+            </div>
+            <div class="station-item" data-index="1">
+              <div class="station-number" style="background:var(--route2)">2</div>
+              <div class="station-info">
+                <div class="station-name">镇邦美食街</div>
+                <div class="station-hours">🕐 10:00-22:00</div>
+                <div class="station-note">老妈宫粽球、小公园蛋挞、老潮兴粿品</div>
+                <div class="station-duration">⏱️ 建议 1.5 小时 · 人均50元</div>
+              </div>
+            </div>
+            <div class="station-item" data-index="2">
+              <div class="station-number" style="background:var(--route2)">3</div>
+              <div class="station-info">
+                <div class="station-name">龙眼南路美食街</div>
+                <div class="station-hours">🕐 全天营业（夜市更热闹）</div>
+                <div class="station-note">瑞娇嫲嫲生腌、阿群甘草水果、杨记杏仁茶</div>
+                <div class="station-duration">⏱️ 建议 1.5 小时 · 人均60元</div>
+              </div>
+            </div>
+            <div class="station-item" data-index="3">
+              <div class="station-number" style="background:var(--route2)">4</div>
+              <div class="station-info">
+                <div class="station-name">杏花吴记牛肉火锅</div>
+                <div class="station-hours">🕐 09:30-21:30</div>
+                <div class="station-note">汕头必吃牛肉火锅，建议提前取号</div>
+                <div class="station-duration">⏱️ 建议 1.5 小时 · 人均100-150元</div>
+              </div>
+            </div>
+            <div class="station-item" data-index="4">
+              <div class="station-number" style="background:var(--route2)">5</div>
+              <div class="station-info">
+                <div class="station-name">一杯潮茶</div>
+                <div class="station-hours">🕐 10:00-23:00</div>
+                <div class="station-note">本地网红茶饮，汕头logo打卡</div>
+                <div class="station-duration">⏱️ 建议 20 分钟 · 人均18元</div>
+              </div>
+            </div>
+            <div class="station-item" data-index="5">
+              <div class="station-number" style="background:var(--route2)">6</div>
+              <div class="station-info">
+                <div class="station-name">长平老姿娘夜粥</div>
+                <div class="station-hours">🕐 17:00-次日05:00</div>
+                <div class="station-note">潮汕打冷、白粥、杂咸，夜宵首选</div>
+                <div class="station-duration">⏱️ 建议 1 小时 · 人均80元</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Route 3 -->
+      <div class="route-content" id="route-3">
+        <div class="route-panel">
+          <div class="route-header">
+            <div class="route-label">
+              <div class="route-dot" style="background:var(--route3)"></div>
+              <div class="route-title">③ 南澳海岛风光</div>
+            </div>
+            <div class="route-meta">全程约 60km（含跨海大桥）· 建议 1 天 · 5个站点</div>
+            <div class="route-weather-tag rain-caution">
+              ⚠️ 部分户外 · 建议晴天前往
+            </div>
+          </div>
+          <div class="station-list">
+            <div class="station-item active" data-index="0">
+              <div class="station-number" style="background:var(--route3)">1</div>
+              <div class="station-info">
+                <div class="station-name">南澳大桥</div>
+                <div class="station-hours">🕐 全天通行（过路费96元/车）</div>
+                <div class="station-note">全长11公里跨海大桥，壮观海景</div>
+                <div class="station-duration">⏱️ 建议 20 分钟车程</div>
+              </div>
+            </div>
+            <div class="station-item" data-index="1">
+              <div class="station-number" style="background:var(--route3)">2</div>
+              <div class="station-info">
+                <div class="station-name">长山尾灯塔</div>
+                <div class="station-hours">🕐 全天开放</div>
+                <div class="station-note">红色灯塔，南澳岛标志性打卡点</div>
+                <div class="station-duration">⏱️ 建议 30 分钟 · 免费</div>
+              </div>
+            </div>
+            <div class="station-item" data-index="2">
+              <div class="station-number" style="background:var(--route3)">3</div>
+              <div class="station-info">
+                <div class="station-name">青澳湾</div>
+                <div class="station-hours">🕐 08:00-18:00（海滨浴场）</div>
+                <div class="station-note">广东最美海湾，天然海滨浴场</div>
+                <div class="station-duration">⏱️ 建议 2-3 小时 · 免费</div>
+              </div>
+            </div>
+            <div class="station-item" data-index="3">
+              <div class="station-number" style="background:var(--route3)">4</div>
+              <div class="station-info">
+                <div class="station-name">北回归线广场</div>
+                <div class="station-hours">🕐 全天开放</div>
+                <div class="station-note">自然之门地标，每年夏至立竿无影</div>
+                <div class="station-duration">⏱️ 建议 30 分钟 · 免费</div>
+              </div>
+            </div>
+            <div class="station-item" data-index="4">
+              <div class="station-number" style="background:var(--route3)">5</div>
+              <div class="station-info">
+                <div class="station-name">三囱崖灯塔</div>
+                <div class="station-hours">🕐 外观全天（内部不开放）</div>
+                <div class="station-note">双子灯塔，南澳岛最美日落观赏点</div>
+                <div class="station-duration">⏱️ 建议 1 小时 · 免费</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Route 4 -->
+      <div class="route-content" id="route-4">
+        <div class="route-panel">
+          <div class="route-header">
+            <div class="route-label">
+              <div class="route-dot" style="background:var(--route4)"></div>
+              <div class="route-title">④ 潮汕文化巡礼</div>
+            </div>
+            <div class="route-meta">全程约 5km · 建议 4-5 小时 · 5个站点</div>
+            <div class="route-weather-tag rain-friendly">
+              ✅ 雨天友好 · 80% 室内景点
+            </div>
+          </div>
+          <div class="station-list">
+            <div class="station-item active" data-index="0">
+              <div class="station-number" style="background:var(--route4)">1</div>
+              <div class="station-info">
+                <div class="station-name">汕头市博物馆</div>
+                <div class="station-hours">🕐 09:00-17:00（周一闭馆）</div>
+                <div class="station-note">馆藏文物近万件，了解潮汕历史文化</div>
+                <div class="station-duration">⏱️ 建议 1.5 小时 · 免费需预约</div>
+              </div>
+            </div>
+            <div class="station-item" data-index="1">
+              <div class="station-number" style="background:var(--route4)">2</div>
+              <div class="station-info">
+                <div class="station-name">潮汕历史文化博览中心</div>
+                <div class="station-hours">🕐 09:00-17:00（周一闭馆）</div>
+                <div class="station-note">现代建筑地标，展示潮汕非遗文化</div>
+                <div class="station-duration">⏱️ 建议 1.5 小时 · 免费</div>
+              </div>
+            </div>
+            <div class="station-item" data-index="2">
+              <div class="station-number" style="background:var(--route4)">3</div>
+              <div class="station-info">
+                <div class="station-name">存心公馆</div>
+                <div class="station-hours">🕐 09:00-21:00</div>
+                <div class="station-note">民国时期建筑，可品工夫茶看潮剧</div>
+                <div class="station-duration">⏱️ 建议 1 小时 · 茶位费30元起</div>
+              </div>
+            </div>
+            <div class="station-item" data-index="3">
+              <div class="station-number" style="background:var(--route4)">4</div>
+              <div class="station-info">
+                <div class="station-name">陈慈黉故居</div>
+                <div class="station-hours">🕐 08:30-17:30</div>
+                <div class="station-note">岭南第一侨宅，中西合璧建筑奇观</div>
+                <div class="station-duration">⏱️ 建议 1.5 小时 · 门票40元</div>
+              </div>
+            </div>
+            <div class="station-item" data-index="4">
+              <div class="station-number" style="background:var(--route4)">5</div>
+              <div class="station-info">
+                <div class="station-name">汕头大学</div>
+                <div class="station-hours">🕐 校园部分开放（需预约）</div>
+                <div class="station-note">李嘉诚基金会资助，最美校园之一</div>
+                <div class="station-duration">⏱️ 建议 1 小时 · 免费需预约</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Food Section -->
+  <div class="info-section">
+    <h3>🍜 必吃美食速查</h3>
+    <div class="food-grid">
+      <div class="food-item">
+        <div class="food-name">牛肉火锅</div>
+        <div class="food-price">杏花吴记/八合里 ¥100-150/人</div>
+      </div>
+      <div class="food-item">
+        <div class="food-name">肠粉</div>
+        <div class="food-price">小吴/大树 ¥15-25/人</div>
+      </div>
+      <div class="food-item">
+        <div class="food-name">粿条汤</div>
+        <div class="food-price">老胡/镇平 ¥20-30/人</div>
+      </div>
+      <div class="food-item">
+        <div class="food-name">蚝烙</div>
+        <div class="food-price">小公园周边 ¥25-40/人</div>
+      </div>
+      <div class="food-item">
+        <div class="food-name">生腌海鲜</div>
+        <div class="food-price">瑞娇嫲嫲 ¥60-100/人</div>
+      </div>
+      <div class="food-item">
+        <div class="food-name">工夫茶</div>
+        <div class="food-price">存心公馆 ¥30起/位</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Tips Section -->
+  <div class="info-section">
+    <h3>📌 出行贴士</h3>
+    <div class="tips-list">
+      <div class="tip-item">
+        <span class="tip-icon">🚄</span>
+        <span><strong>交通</strong>：高铁至汕头站，市区内共享电动车很方便，去南澳岛建议自驾或包车</span>
+      </div>
+      <div class="tip-item">
+        <span class="tip-icon">🏨</span>
+        <span><strong>住宿</strong>：建议住小公园/金平区附近，美食集中；去南澳岛可住青澳湾海景房</span>
+      </div>
+      <div class="tip-item">
+        <span class="tip-icon">💰</span>
+        <span><strong>预算</strong>：人均300-500元/天（不含住宿），牛肉火锅较贵但值得</span>
+      </div>
+      <div class="tip-item">
+        <span class="tip-icon">⚠️</span>
+        <span><strong>注意</strong>：五一期间小公园人流量大，注意保管财物；吃生腌要量力而行</span>
+      </div>
+    </div>
+  </div>
+
+  <footer class="footer">
+    <p>© 2026 CityWalk Planner | 汕头 CityWalk v2.0</p>
+    <p style="margin-top:4px;font-size:11px;">数据更新于 2026-04-22 | 天气信息仅供参考</p>
+  </footer>
+
+  <script>
+    // Route Data
+    const routesData = {
+      1: {
+        center: [116.712, 23.353],
+        zoom: 15,
+        stations: [
+          { name: "小公园中山纪念亭", lat: 23.3535, lng: 116.7115 },
+          { name: "开埠文化陈列馆", lat: 23.3545, lng: 116.7105 },
+          { name: "老妈宫", lat: 23.3530, lng: 116.7100 },
+          { name: "镇邦美食街", lat: 23.3525, lng: 116.7095 },
+          { name: "西堤公园", lat: 23.3500, lng: 116.7050 },
+          { name: "广场轮渡", lat: 23.3490, lng: 116.7080 }
+        ]
+      },
+      2: {
+        center: [116.720, 23.360],
+        zoom: 14,
+        stations: [
+          { name: "小吴肠粉", lat: 23.3620, lng: 116.7180 },
+          { name: "镇邦美食街", lat: 23.3525, lng: 116.7095 },
+          { name: "龙眼南路", lat: 23.3650, lng: 116.7250 },
+          { name: "杏花吴记", lat: 23.3680, lng: 116.7280 },
+          { name: "一杯潮茶", lat: 23.3630, lng: 116.7200 },
+          { name: "长平老姿娘", lat: 23.3660, lng: 116.7220 }
+        ]
+      },
+      3: {
+        center: [117.120, 23.450],
+        zoom: 11,
+        stations: [
+          { name: "南澳大桥", lat: 23.3800, lng: 116.8200 },
+          { name: "长山尾灯塔", lat: 23.4100, lng: 117.0200 },
+          { name: "青澳湾", lat: 23.4500, lng: 117.1200 },
+          { name: "北回归线广场", lat: 23.4520, lng: 117.1250 },
+          { name: "三囱崖灯塔", lat: 23.4200, lng: 117.1500 }
+        ]
+      },
+      4: {
+        center: [116.750, 23.380],
+        zoom: 13,
+        stations: [
+          { name: "汕头市博物馆", lat: 23.3750, lng: 116.7200 },
+          { name: "潮博中心", lat: 23.3200, lng: 116.7800 },
+          { name: "存心公馆", lat: 23.3530, lng: 116.7110 },
+          { name: "陈慈黉故居", lat: 23.4200, lng: 116.8500 },
+          { name: "汕头大学", lat: 23.3950, lng: 116.6800 }
+        ]
+      }
+    };
+
+    let map, currentRoute = 1;
+    let markers = [], polyline = null;
+
+    // Initialize Map
+    function initMap() {
+      const data = routesData[currentRoute];
+      map = new TMap.Map('map', {
+        center: new TMap.LatLng(data.center[1], data.center[0]),
+        zoom: data.zoom
+      });
+      updateMap();
+    }
+
+    // Update Map for current route
+    function updateMap() {
+      // Clear existing markers and polyline
+      markers.forEach(m => m.setMap(null));
+      markers = [];
+      if (polyline) {
+        polyline.setMap(null);
+        polyline = null;
+      }
+
+      const data = routesData[currentRoute];
+      const color = getRouteColor(currentRoute);
+      const path = [];
+
+      // Add markers
+      data.stations.forEach((station, index) => {
+        const latLng = new TMap.LatLng(station.lat, station.lng);
+        path.push(latLng);
+
+        const marker = new TMap.MultiMarker({
+          map: map,
+          styles: {
+            'marker': new TMap.MarkerStyle({
+              width: 28,
+              height: 28,
+              anchor: { x: 14, y: 28 },
+              color: color
+            })
+          },
+          geometries: [{
+            id: `marker-${index}`,
+            styleId: 'marker',
+            position: latLng,
+            properties: { title: station.name, index: index }
+          }]
+        });
+        markers.push(marker);
+      });
+
+      // Add polyline
+      polyline = new TMap.MultiPolyline({
+        map: map,
+        styles: {
+          'polyline': new TMap.PolylineStyle({
+            color: color,
+            width: 4,
+            borderColor: '#ffffff',
+            borderWidth: 2
+          })
+        },
+        geometries: [{
+          id: 'route',
+          styleId: 'polyline',
+          paths: path
+        }]
+      });
+
+      // Fit bounds
+      map.fitBounds(path);
+    }
+
+    function getRouteColor(route) {
+      const colors = {
+        1: '#D4756B',
+        2: '#5B9A8B',
+        3: '#E8A598',
+        4: '#F5A623'
+      };
+      return colors[route] || '#D4756B';
+    }
+
+    // Switch Route
+    function switchRoute(route) {
+      currentRoute = route;
+
+      // Update tabs
+      document.querySelectorAll('.route-tab').forEach(tab => {
+        tab.classList.toggle('active', parseInt(tab.dataset.route) === route);
+      });
+
+      // Update content
+      document.querySelectorAll('.route-content').forEach(content => {
+        content.classList.remove('active');
+      });
+      document.getElementById(`route-${route}`).classList.add('active');
+
+      // Update map
+      if (map) {
+        const data = routesData[route];
+        map.setCenter(new TMap.LatLng(data.center[1], data.center[0]));
+        map.setZoom(data.zoom);
+        updateMap();
+      }
+    }
+
+    // Initialize
+    window.onload = function() {
+      initMap();
+    };
+  </script>
+</body>
+</html>
